@@ -10,8 +10,6 @@ function RecipeResult({ recipe, onReset }) {
   };
 
   const Print = () => {
-    // Placeholder PDF generation - for a real implementation, use a library like jsPDF.
-    // Here we just print the page:
     window.print();
   };
 

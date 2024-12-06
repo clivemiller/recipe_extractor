@@ -22,23 +22,23 @@ function Hero({ url, setUrl, handleFetchRecipe, error }) {
         {error && <div className="error-msg">{error}</div>}
         <div className="supported-sites">
           <button onClick={() => setIsOpen(!isOpen)} className="toggle-supported">
-            Recipe Websites that return best results
+            Recipe Websites that return best results {`(Tested sites)`}
           </button>
           <Collapsible isOpen={isOpen}>
             <ul>
               <li>https://www.inspiredtaste.net</li>
-              <li>https://www.epicurious.com/recipes/food/views/philly-fluff-cake</li>
-              <li>https://www.halfbakedharvest.com/chicken-gnocchi-soup/</li>
+              <li>https://www.epicurious.com</li>
               <li>https://www.seriouseats.com</li>
               <li>https://www.allrecipes.com</li>
             </ul>
           </Collapsible>
           <button onClick={() => setIsOpen(!isOpen)} className="toggle-supported">
-            Functional tested Websites, my include unneeded text
+            Sites with known issues
           </button>
           <Collapsible isOpen={isOpen}>
             <ul>
               <li>https://www.halfbakedharvest.com</li>
+              <li>https://smittenkitchen.com</li>
             </ul>
           </Collapsible>
         </div>

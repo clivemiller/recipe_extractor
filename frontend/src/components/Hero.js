@@ -60,6 +60,11 @@ function Hero({ url, setUrl, handleFetchRecipe, error }) {
                 <li><a href="https://www.servingdumplings.com" target="_blank" rel="noopener noreferrer">https://www.servingdumplings.com</a></li>
                 <li><a href="https://healthyrecipesblogs.com" target="_blank" rel="noopener noreferrer">https://healthyrecipesblogs.com</a></li>
                 <li><a href="https://www.spendwithpennies.com" target="_blank" rel="noopener noreferrer">https://www.spendwithpennies.com</a></li>
+                <li><a href="https://www.onceuponachef.com" target="_blank" rel="noopener noreferrer">https://www.onceuponachef.com</a></li>
+                <li><a href="https://damndelicious.net" target="_blank" rel="noopener noreferrer">https://damndelicious.net</a></li>
+                {/* <li><a href="" target="_blank" rel="noopener noreferrer"></a></li>
+                <li><a href="" target="_blank" rel="noopener noreferrer"></a></li>
+                <li><a href="" target="_blank" rel="noopener noreferrer"></a></li> */}
             </div>
           </Collapsible>
           <button onClick={() => setIsOpen(!isOpen)} className="toggle-supported">
@@ -67,9 +72,7 @@ function Hero({ url, setUrl, handleFetchRecipe, error }) {
           </button>
           <Collapsible isOpen={isOpen}>
             <ul>
-              <li>https://www.onceuponachef.com</li>
               <li>https://pinchofyum.com</li>
-              <li>https://damndelicious.net</li>
               <li>https://joythebaker.com</li>
               <li>https://www.loveandlemons.com</li>
               <li>https://food52.com</li>

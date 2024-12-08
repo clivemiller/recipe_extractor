@@ -279,6 +279,8 @@ def extract_recipe(url):
       "loveandlemons.com" in url or
       "feelgoodfoodie.net" in url or
       "servingdumplings.com" in url or
+      "spendwithpennies.com" in url or
+      "healthyrecipesblogs.com" in url or
       "budgetbytes.com" in url):
         print("DEBUG: URL is from a supported site (e.g., Half Baked Harvest, Minimalist Baker, David Lebovitz, Damn Delicious, Love and Lemons, Budget Bytes).")
         wprm_recipe = extract_wprm_recipe(soup)

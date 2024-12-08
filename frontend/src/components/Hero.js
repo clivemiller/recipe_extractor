@@ -58,6 +58,8 @@ function Hero({ url, setUrl, handleFetchRecipe, error }) {
               <li><a href="https://www.budgetbytes.com" target="_blank" rel="noopener noreferrer">https://www.budgetbytes.com</a></li>
               <li><a href="https://feelgoodfoodie.net" target="_blank" rel="noopener noreferrer">https://feelgoodfoodie.net</a></li>
               <li><a href="https://www.servingdumplings.com" target="_blank" rel="noopener noreferrer">https://www.servingdumplings.com</a></li>
+              <li><a href="https://healthyrecipesblogs.com" target="_blank" rel="noopener noreferrer">https://healthyrecipesblogs.com</a></li>
+              <li><a href="hhttps://www.spendwithpennies.com" target="_blank" rel="noopener noreferrer">hhttps://www.spendwithpennies.com</a></li>
             </ul>
           </Collapsible>
           <button onClick={() => setIsOpen(!isOpen)} className="toggle-supported">

@@ -1,0 +1,14 @@
+tasty-recipes:
+    https://pinchofyum.com
+    https://joythebaker.com
+
+wrpm should be able to instantly integrate these into the wrpm halfbaked harvest function:
+    https://minimalistbaker.com
+    https://www.davidlebovitz.com
+    https://damndelicious.net
+    https://www.loveandlemons.com
+    https://www.budgetbytes.com
+custum function: 
+    https://www.kingarthurbaking.com
+    https://food52.com
+    https://barefootcontessa.com

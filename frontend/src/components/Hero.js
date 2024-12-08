@@ -4,11 +4,25 @@ import Collapsible from './Collapsible';
 function Hero({ url, setUrl, handleFetchRecipe, error }) {
   const [isOpen, setIsOpen] = useState(false);
 
+  const sendEmail = () => {
+    const recipient = "the.recipe.fox@gmail.com";
+    const subject = encodeURIComponent("Sad Problem Found!!!");
+    const body = encodeURIComponent(
+      "Hello Mr. Dev,\n\n I have a issue to report: "
+    );
+
+    // Construct the mailto link
+    const mailtoLink = `mailto:${recipient}?subject=${subject}&body=${body}`;
+
+    // Open the mailto link
+    window.location.href = mailtoLink;
+  };
+
   return (
     <div className="hero">
       <div className="hero-content">
-        <img src="/logo.png" alt="Logo" className="hero-logo"/>
-        <h1>Extract Recipes Instantly</h1>
+        <img src="/logo.png" alt="Logo" className="hero-logo" />
+        <h1>The Recipe Fox</h1>
         <p>Paste a recipe URL, and we'll extract all the details for you.</p>
         <form onSubmit={handleFetchRecipe} className="hero-form">
           <input 
@@ -20,25 +34,42 @@ function Hero({ url, setUrl, handleFetchRecipe, error }) {
           <button type="submit">Extract Recipe</button>
         </form>
         {error && <div className="error-msg">{error}</div>}
+        <button onClick={sendEmail}>
+          Send Feedback or Query
+        </button>
         <div className="supported-sites">
           <button onClick={() => setIsOpen(!isOpen)} className="toggle-supported">
-            Tested Websites that return best results {`(Tested sites)`}
+            Websites that return best results {`(Tested sites)`}
           </button>
           <Collapsible isOpen={isOpen}>
             <ul>
-              <li>https://www.inspiredtaste.net</li>
-              <li>https://www.epicurious.com</li>
-              <li>https://www.seriouseats.com</li>
-              <li>https://www.allrecipes.com</li>
-              <li>https://www.halfbakedharvest.com</li>
+              <li><a href="https://www.inspiredtaste.net" target="_blank" rel="noopener noreferrer">https://www.inspiredtaste.net</a></li>
+              <li><a href="https://www.epicurious.com" target="_blank" rel="noopener noreferrer">https://www.epicurious.com</a></li>
+              <li><a href="https://www.seriouseats.com" target="_blank" rel="noopener noreferrer">https://www.seriouseats.com</a></li>
+              <li><a href="https://www.allrecipes.com" target="_blank" rel="noopener noreferrer">https://www.allrecipes.com</a></li>
+              <li><a href="https://www.halfbakedharvest.com" target="_blank" rel="noopener noreferrer">https://www.halfbakedharvest.com</a></li>
+              <li><a href="https://smittenkitchen.com" target="_blank" rel="noopener noreferrer">https://smittenkitchen.com</a></li>
+              <li><a href="https://www.simplyrecipes.com" target="_blank" rel="noopener noreferrer">https://www.simplyrecipes.com</a></li>
+              <li><a href="https://www.thepioneerwoman.com" target="_blank" rel="noopener noreferrer">https://www.thepioneerwoman.com</a></li>
+              <li><a href="https://www.marthastewart.com" target="_blank" rel="noopener noreferrer">https://www.marthastewart.com</a></li>
+              <li><a href="https://www.jamieoliver.com" target="_blank" rel="noopener noreferrer">https://www.jamieoliver.com</a></li>
             </ul>
           </Collapsible>
           <button onClick={() => setIsOpen(!isOpen)} className="toggle-supported">
-            Sites with known issues
+            Sites that have known issues - will be supported soon!
           </button>
           <Collapsible isOpen={isOpen}>
             <ul>
-              <li>https://smittenkitchen.com</li>
+              <li>https://pinchofyum.com</li>
+              <li>https://minimalistbaker.com</li>
+              <li>https://www.davidlebovitz.com</li>
+              <li>https://damndelicious.net</li>
+              <li>https://joythebaker.com</li>
+              <li>https://www.loveandlemons.com</li>
+              <li>https://food52.com</li>
+              <li>https://cookieandkate.com</li>
+              <li>https://www.budgetbytes.com</li>
+              <li>https://barefootcontessa.com</li>
             </ul>
           </Collapsible>
         </div>
@@ -48,3 +79,4 @@ function Hero({ url, setUrl, handleFetchRecipe, error }) {
 }
 
 export default Hero;
+

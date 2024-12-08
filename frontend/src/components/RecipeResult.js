@@ -129,7 +129,7 @@ function RecipeResult({ recipe, onReset }) {
       )}
       <div className="actions">
         <button onClick={handlePrint}>Print</button>
-        <button onClick={handleCopy}>Copy to Clipboard</button>
+        <button onClick={handleCopy}>Save to Recipe Book -coming soon</button>
       </div>
     </div>
   );

@@ -1,24 +1,226 @@
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString, Tag
 import json
 import re
+import logging
 
-def is_recipe_like(ingredients, instructions):
-    if not ingredients or not instructions:
-        return False
+# Configure logging once at the module level
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
-    cooking_verbs = ['bake', 'boil', 'simmer', 'stir', 'mix', 'cook', 'grill', 'saute', 'whisk', 'marinate', 'roast']
-    instruction_score = sum(any(verb in step.lower() for verb in cooking_verbs) for step in instructions)
-    if instruction_score < len(instructions) * 0.3:
-        return False
+def extract_smittenkitchen_recipe(soup):
+    def is_within_ad_div(tag):
+        """Check if a tag is within an advertisement div."""
+        return any(
+            parent.name == 'div' and any(cls.startswith('code-block') for cls in parent.get('class', []))
+            for parent in tag.parents
+        )
 
-    measurement_words = ['cup', 'cups', 'tbsp', 'tablespoon', 'tsp', 'teaspoon', 'oz', 'ounce', 
-                         'pound', 'lb', 'lbs', 'grams', 'g', 'kg', 'ml', 'l', 'pinch', 'clove', 'bunch', 'slice', 'slices']
-    ingredient_score = sum(any(mw in ing.lower() for mw in measurement_words) for ing in ingredients)
-    if ingredient_score < len(ingredients) * 0.3:
-        return False
+    try:
+        logger.debug("Starting Smitten Kitchen recipe extraction.")
 
-    return True
+        # Extract Recipe Name
+        name_tag = soup.select_one('h1.entry-title')
+        recipe_name = name_tag.get_text(" ", strip=True) if name_tag else "Untitled Recipe"
+        if name_tag:
+            logger.debug(f"Extracted recipe name: {recipe_name}")
+        else:
+            logger.debug("Recipe name not found. Using default title.")
+
+        # Extract Ingredients
+        ingredients = []
+        ingredients_container = soup.select_one('.jetpack-recipe-ingredients')
+        if ingredients_container:
+            logger.debug("Found ingredients container.")
+            for li in ingredients_container.find_all('li', class_='jetpack-recipe-ingredient'):
+                if not is_within_ad_div(li):
+                    text = li.get_text(" ", strip=True)
+                    if text:
+                        ingredients.append(text)
+                        logger.debug(f"Extracted ingredient: {text}")
+        else:
+            logger.warning("Ingredients container not found.")
+
+        # Extract Instructions
+        instructions = []
+        instructions_container = soup.select_one('.jetpack-recipe-directions.e-instructions')
+        if instructions_container:
+            logger.debug("Found instructions container.")
+
+            # Navigate to the parent <p> tag
+            parent_p = instructions_container.find_parent('p')
+            if parent_p:
+                logger.debug("Located parent <p> of instructions container.")
+
+                # Initialize a list to collect all relevant <p> tags (including parent_p)
+                relevant_ps = [parent_p]
+
+                # Collect all subsequent sibling <p> tags that contain instruction steps
+                for sibling in parent_p.find_next_siblings('p'):
+                    # Stop if we reach a <p> that signifies the end of instructions (e.g., another section)
+                    # Adjust this condition based on the actual HTML structure
+                    if sibling.find(['h2', 'h3', 'h4']):
+                        logger.debug("Encountered a new section. Stopping instruction extraction.")
+                        break
+
+                    relevant_ps.append(sibling)
+
+                logger.debug(f"Number of <p> tags to process for instructions: {len(relevant_ps)}")
+
+                # Iterate through each relevant <p> tag to extract instruction steps
+                for p in relevant_ps:
+                    # Since there are no ads within <p> tags, we don't need to skip any
+                    # Find the <b> tag which denotes the step title
+                    b_tag = p.find('b')
+                    if b_tag:
+                        step_title = b_tag.get_text(strip=True).rstrip(':')
+                        logger.debug(f"Extracted step title: {step_title}")
+
+                        # Extract the step description by getting all content after the <b> tag
+                        step_description_elements = b_tag.next_siblings
+                        step_description = []
+                        for elem in step_description_elements:
+                            if isinstance(elem, Tag):
+                                text = elem.get_text(" ", strip=True)
+                                if text:
+                                    step_description.append(text)
+                            elif isinstance(elem, NavigableString):
+                                text = elem.strip()
+                                if text:
+                                    step_description.append(text)
+                        step_description_text = ' '.join(step_description)
+                        instructions.append(f"{step_title}: {step_description_text}")
+                        logger.debug(f"Added instruction step: {step_title}: {step_description_text}")
+                    else:
+                        # If no <b> tag, treat the entire <p> text as a single instruction step without a title
+                        step_text = p.get_text(" ", strip=True)
+                        if step_text:
+                            instructions.append(step_text)
+                            logger.debug(f"Added instruction step without title: {step_text}")
+            else:
+                logger.warning("Parent <p> of instructions container not found.")
+        else:
+            logger.warning("Instructions container not found.")
+
+        # Return the extracted recipe
+        if ingredients or instructions:
+            return {
+                "name": recipe_name,
+                "ingredients": ingredients,
+                "instructions": instructions
+            }
+        else:
+            logger.warning("No ingredients or instructions extracted.")
+            return None
+
+    except Exception as e:
+        logger.error(f"Error extracting recipe: {e}")
+        return None
+    
+def extract_halfbakedharvest_recipe(soup):
+    print("DEBUG: Starting Half Baked Harvest recipe extraction.")
+    
+    # Extract ingredients
+    ingredients = []
+    ingredients_container = soup.select_one('.wprm-recipe-ingredient-group')
+    if not ingredients_container:
+        print("DEBUG: Ingredients container not found.")
+    else:
+        print("DEBUG: Found ingredients container.")
+        li_tags = ingredients_container.find_all('li', class_='wprm-recipe-ingredient')
+        for li in li_tags:
+            # Extract amount
+            amount = li.find('span', class_='wprm-recipe-ingredient-amount')
+            amount_text = amount.get_text(" ", strip=True) if amount else ""
+            
+            # Extract unit
+            unit = li.find('span', class_='wprm-recipe-ingredient-unit')
+            unit_text = unit.get_text(" ", strip=True) if unit else ""
+            
+            # Extract ingredient name
+            name = li.find('span', class_='wprm-recipe-ingredient-name')
+            if name:
+                # Some ingredients have links, some don't
+                ingredient_text = name.get_text(" ", strip=True)
+            else:
+                ingredient_text = ""
+            
+            # Combine amount, unit, and name
+            if amount_text and unit_text:
+                full_ingredient = f"{amount_text} {unit_text} {ingredient_text}"
+            elif amount_text:
+                full_ingredient = f"{amount_text} {ingredient_text}"
+            else:
+                full_ingredient = ingredient_text
+            
+            # Extract notes if any
+            notes = li.find('span', class_='wprm-recipe-ingredient-notes')
+            if notes:
+                notes_text = notes.get_text(" ", strip=True)
+                full_ingredient += f" {notes_text}"
+            
+            print(f"DEBUG: Extracted ingredient: {full_ingredient}")
+            if full_ingredient:
+                ingredients.append(full_ingredient)
+
+    # Extract instructions
+    instructions = []
+    instructions_container = soup.select_one('.wprm-recipe-instructions')
+    if not instructions_container:
+        print("DEBUG: Instructions container not found.")
+    else:
+        print("DEBUG: Found instructions container.")
+
+        # Remove ads, scripts, and irrelevant elements
+        for ad in instructions_container.select('.wprm-recipe-instruction-image, iframe, script, .ad-container'):
+            print(f"DEBUG: Removing ad or irrelevant element: {ad}")
+            ad.decompose()
+
+        # Attempt to find individual instruction steps
+        instruction_steps = instructions_container.find_all('div', class_='wprm-recipe-instruction-text')
+        if instruction_steps:
+            print("DEBUG: Found separate instruction steps.")
+            for step in instruction_steps:
+                step_text = step.get_text(" ", strip=True)
+                if step_text:
+                    instructions.append(step_text)
+                    print(f"DEBUG: Extracted instruction step: {step_text}")
+        else:
+            # If instructions are in a single paragraph with numbering
+            print("DEBUG: No separate instruction steps found. Checking for single paragraph with numbering.")
+            paragraphs = instructions_container.find_all(['p', 'div'])
+            for p in paragraphs:
+                text = p.get_text(" ", strip=True)
+                if not text:
+                    continue
+
+                # Use regex to split instructions based on numbering (e.g., "1. ", "2. ", etc.)
+                # This regex looks for numbers followed by a dot and a space or similar pattern
+                split_steps = re.split(r'\b\d+\.\s+', text)
+                # The first split item might be empty if the text starts with a number
+                if split_steps and split_steps[0].strip() == '':
+                    split_steps = split_steps[1:]
+                
+                # Find all step numbers to reconstruct step numbering
+                step_numbers = re.findall(r'\b\d+\.\s+', text)
+                for i, step in enumerate(split_steps):
+                    if i < len(step_numbers):
+                        step_number = step_numbers[i].strip()
+                        step_text = f"{step_number} {step.strip()}"
+                    else:
+                        step_text = step.strip()
+                    if step_text:
+                        instructions.append(step_text)
+                        print(f"DEBUG: Extracted instruction step: {step_text}")
+
+    print("DEBUG: Final extracted ingredients:", ingredients)
+    print("DEBUG: Final extracted instructions:", instructions)
+
+    return {
+        "name": "Untitled Recipe",
+        "ingredients": ingredients,
+        "instructions": instructions
+    } if ingredients or instructions else None
 
 def extract_recipe_from_jsonld(soup):
     jsonld_tags = soup.find_all('script', type='application/ld+json')
@@ -31,190 +233,56 @@ def extract_recipe_from_jsonld(soup):
             for item in candidates:
                 if item.get('@type', '') == 'Recipe' or 'recipeInstructions' in item:
                     return item
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as e:
+            print(f"DEBUG: JSON-LD parsing error: {e}")
             continue
-    return None
-
-def heuristic_search_for_ingredients(soup):
-    measurement_words = ['cup', 'cups', 'tbsp', 'tablespoon', 'tsp', 'teaspoon', 'oz', 'ounce', 
-                          'pound', 'lb', 'lbs', 'grams', 'g', 'kg', 'ml', 'l', 'pinch', 'clove', 'bunch']
-    candidate_ul_lists = []
-    for ul in soup.find_all('ul'):
-        text_list = [li.get_text(strip=True) for li in ul.find_all('li')]
-        if text_list:
-            score = sum(any(mw in li.lower() for mw in measurement_words) for li in text_list)
-            if score > len(text_list) / 2:
-                candidate_ul_lists.append(text_list)
-    return candidate_ul_lists
-
-def heuristic_search_for_instructions(soup):
-    instruction_candidates = []
-
-    # First try <ol> lists
-    for ol in soup.find_all('ol'):
-        steps = [li.get_text(strip=True) for li in ol.find_all('li')]
-        if len(steps) > 2:
-            instruction_candidates.append(steps)
-
-    # Try known selectors
-    if not instruction_candidates:
-        instruction_containers = soup.select('div.instructions, div.directions')
-        for container in instruction_containers:
-            text = container.get_text('\n', strip=True)
-            steps = [line.strip() for line in text.split('\n') if line.strip()]
-            if len(steps) > 2:
-                instruction_candidates.append(steps)
-
-    # Try fallback with headings
-    if not instruction_candidates:
-        for header_text in ['instructions', 'directions', 'method']:
-            header = soup.find(lambda tag: tag.name in ['h2','h3','strong','span','b'] and header_text in tag.get_text('', True).lower())
-            if header:
-                candidate_elements = header.find_all_next(['p','li'], limit=50)
-                steps = [el.get_text(strip=True) for el in candidate_elements if el.get_text(strip=True)]
-                if len(steps) >= 2:
-                    instruction_candidates.append(steps)
-
-    return instruction_candidates
-
-def extract_recipe_heuristically(soup):
-    ingredient_candidates = heuristic_search_for_ingredients(soup)
-    instruction_candidates = heuristic_search_for_instructions(soup)
-
-    for ingredients in ingredient_candidates:
-        for instructions in instruction_candidates:
-            if is_recipe_like(ingredients, instructions):
-                return {
-                    'ingredients': ingredients,
-                    'instructions': instructions
-                }
-
-    return None
-
-def final_fallback_search(soup):
-    keywords = ['recipe', 'ingredients', 'instructions', 'directions', 'cooking']
-    candidate_tags = soup.find_all(['div', 'section', 'article', 'span'], 
-                                   attrs={'class': True}) + soup.find_all(['div', 'section', 'article', 'span'], 
-                                                                           attrs={'id': True})
-    filtered_candidates = []
-    for tag in candidate_tags:
-        attrs_to_check = []
-        if tag.get('class'):
-            attrs_to_check.extend(tag.get('class'))
-        if tag.get('id'):
-            attrs_to_check.append(tag.get('id'))
-
-        attr_str = ' '.join(attrs_to_check).lower()
-        if any(k in attr_str for k in keywords):
-            filtered_candidates.append(tag)
-
-    for container in filtered_candidates:
-        container_soup = BeautifulSoup(str(container), 'html.parser')
-        result = extract_recipe_heuristically(container_soup)
-        if result and is_recipe_like(result['ingredients'], result['instructions']):
-            return result
-
-    return None
-
-def extract_wprm_recipe(soup):
-    ingredients_container = soup.select_one('.wprm-recipe-ingredients-container')
-    instructions_container = soup.select_one('.wprm-recipe-instructions-container')
-
-    ingredients = []
-    instructions = []
-
-    if ingredients_container:
-        ingredient_items = ingredients_container.select('.wprm-recipe-ingredients li.wprm-recipe-ingredient')
-        if not ingredient_items:
-            ingredient_items = ingredients_container.find_all('li')
-        for item in ingredient_items:
-            text = item.get_text(" ", strip=True)
-            if text:
-                ingredients.append(text)
-
-    if instructions_container:
-        instruction_items = instructions_container.select('.wprm-recipe-instructions li.wprm-recipe-instruction')
-        if not instruction_items:
-            instruction_items = instructions_container.find_all('li')
-        for step in instruction_items:
-            text = step.get_text(" ", strip=True)
-            if text:
-                instructions.append(text)
-
-    if ingredients and instructions and is_recipe_like(ingredients, instructions):
-        return {
-            'ingredients': ingredients,
-            'instructions': instructions
-        }
-    return None
-
-def extract_from_entry_content(soup):
-    entry_content = soup.select_one('.entry-content')
-    if not entry_content:
-        return None
-
-    paragraphs = entry_content.find_all(['p'])
-    lines = [p.get_text(" ", strip=True) for p in paragraphs if p.get_text(strip=True)]
-
-    ingredients = []
-    instructions = []
-    found_ingredients_section = False
-    found_instructions_section = False
-
-    ingredients_heading_keywords = ['ingredients']
-    instructions_heading_keywords = ['instructions', 'method', 'directions']
-
-    for line in lines:
-        lower_line = line.lower()
-        if any(kw in lower_line for kw in ingredients_heading_keywords):
-            found_ingredients_section = True
-            found_instructions_section = False
-            continue
-        if any(kw in lower_line for kw in instructions_heading_keywords):
-            found_instructions_section = True
-            found_ingredients_section = False
-            continue
-
-        if found_ingredients_section:
-            if re.search(r'\d', line) or any(m in lower_line for m in ['cup', 'tablespoon', 'teaspoon', 'tbsp', 'tsp', 'oz', 'ounce', 'pound']):
-                ingredients.append(line)
-        elif found_instructions_section:
-            instructions.append(line)
-
-    if not ingredients and not instructions:
-        possible_ingredients = [l for l in lines if re.search(r'\d', l.lower()) and any(m in l.lower() for m in ['cup','tbsp','tablespoon','tsp','teaspoon','oz','pound','grams','ml'])]
-        possible_instructions = [l for l in lines if any(verb in l.lower() for verb in ['preheat','bake','boil','mix','stir','cook'])]
-
-        if possible_ingredients and possible_instructions:
-            ingredients = possible_ingredients
-            instructions = possible_instructions
-
-    if ingredients and instructions and is_recipe_like(ingredients, instructions):
-        return {
-            'ingredients': ingredients,
-            'instructions': instructions
-        }
-
     return None
 
 def extract_recipe(url):
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0"
     }
-    response = requests.get(url, headers=headers, timeout=10)
+    print(f"DEBUG: Fetching URL: {url}")
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+    except requests.RequestException as e:
+        print(f"DEBUG: Request failed: {e}")
+        return None
+
     if response.status_code != 200:
+        print(f"DEBUG: Failed to fetch URL. Status code: {response.status_code}")
         return None
 
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    # 1. Structured data
+    # 1. Check if Smitten Kitchen
+    if "smittenkitchen.com" in url:
+        print("DEBUG: URL is from Smitten Kitchen.")
+        smitten_recipe = extract_smittenkitchen_recipe(soup)
+        if smitten_recipe:
+            print("DEBUG: Successfully extracted Smitten Kitchen recipe.")
+            return smitten_recipe
+        else:
+            print("DEBUG: Failed to extract Smitten Kitchen recipe.")
+
+    # 2. Check if Half Baked Harvest
+    elif "halfbakedharvest.com" in url:
+        print("DEBUG: URL is from Half Baked Harvest.")
+        hbh_recipe = extract_halfbakedharvest_recipe(soup)
+        if hbh_recipe:
+            print("DEBUG: Successfully extracted Half Baked Harvest recipe.")
+            return hbh_recipe
+        else:
+            print("DEBUG: Failed to extract Half Baked Harvest recipe.")
+
+    # 3. Structured data (JSON-LD)
     structured_recipe = extract_recipe_from_jsonld(soup)
-    name = ''
-    ingredients = []
-    instructions = []
     if structured_recipe:
+        print("DEBUG: Found structured data.")
+        name = structured_recipe.get('name', '')
         ingredients = structured_recipe.get('recipeIngredient', [])
         instructions_data = structured_recipe.get('recipeInstructions', [])
+        instructions = []
         if isinstance(instructions_data, list):
             for step in instructions_data:
                 if isinstance(step, str):
@@ -225,50 +293,11 @@ def extract_recipe(url):
             if isinstance(instructions_data, str):
                 instructions = [instructions_data]
 
-        name = structured_recipe.get('name', '')
-
-        if is_recipe_like(ingredients, instructions):
-            return {
-                "name": name,
-                "ingredients": ingredients,
-                "instructions": instructions
-            }
-
-    # 2. Heuristic extraction
-    heuristic_recipe = extract_recipe_heuristically(soup)
-    if heuristic_recipe and is_recipe_like(heuristic_recipe['ingredients'], heuristic_recipe['instructions']):
         return {
-            "name": name or "Unknown Recipe",
-            "ingredients": heuristic_recipe['ingredients'],
-            "instructions": heuristic_recipe['instructions']
+            "name": name,
+            "ingredients": ingredients,
+            "instructions": instructions
         }
 
-    # 3. Final fallback: general container search
-    fallback_recipe = final_fallback_search(soup)
-    if fallback_recipe and is_recipe_like(fallback_recipe['ingredients'], fallback_recipe['instructions']):
-        return {
-            "name": name or "Unknown Recipe",
-            "ingredients": fallback_recipe['ingredients'],
-            "instructions": fallback_recipe['instructions']
-        }
-
-    # 4. WPRM fallback
-    wprm_recipe = extract_wprm_recipe(soup)
-    if wprm_recipe and is_recipe_like(wprm_recipe['ingredients'], wprm_recipe['instructions']):
-        return {
-            "name": name or "Unknown Recipe",
-            "ingredients": wprm_recipe['ingredients'],
-            "instructions": wprm_recipe['instructions']
-        }
-
-    # 5. New fallback: Extract from entry-content by scanning for keywords
-    entry_content_recipe = extract_from_entry_content(soup)
-    if entry_content_recipe and is_recipe_like(entry_content_recipe['ingredients'], entry_content_recipe['instructions']):
-        return {
-            "name": name or "Unknown Recipe",
-            "ingredients": entry_content_recipe['ingredients'],
-            "instructions": entry_content_recipe['instructions']
-        }
-
-    # If all fail
+    print("DEBUG: No structured data found.")
     return None

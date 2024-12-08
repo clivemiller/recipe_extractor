@@ -117,8 +117,14 @@ def extract_smittenkitchen_recipe(soup):
         logger.error(f"Error extracting recipe: {e}")
         return None
     
-def extract_halfbakedharvest_recipe(soup):
-    print("DEBUG: Starting Half Baked Harvest recipe extraction.")
+def extract_wprm_recipe(soup):
+    print("DEBUG: Starting WPRM recipe extraction.")
+
+    name_tag = soup.select_one('.wprm-recipe-name')
+    recipe_name = name_tag.get_text(" ", strip=True) if name_tag else "Untitled Recipe"
+
+    print(f"DEBUG: Name Container: {name_tag}")
+    print(f"DEBUG: Name Container: {recipe_name}")
     
     # Extract ingredients
     ingredients = []
@@ -217,7 +223,7 @@ def extract_halfbakedharvest_recipe(soup):
     print("DEBUG: Final extracted instructions:", instructions)
 
     return {
-        "name": "Untitled Recipe",
+        "name": recipe_name,
         "ingredients": ingredients,
         "instructions": instructions
     } if ingredients or instructions else None
@@ -266,14 +272,21 @@ def extract_recipe(url):
             print("DEBUG: Failed to extract Smitten Kitchen recipe.")
 
     # 2. Check if Half Baked Harvest
-    elif "halfbakedharvest.com" in url:
-        print("DEBUG: URL is from Half Baked Harvest.")
-        hbh_recipe = extract_halfbakedharvest_recipe(soup)
-        if hbh_recipe:
-            print("DEBUG: Successfully extracted Half Baked Harvest recipe.")
-            return hbh_recipe
+    elif ("halfbakedharvest.com" in url or
+      "minimalistbaker.com" in url or
+      "davidlebovitz.com" in url or
+      "damndelicious.net" in url or
+      "loveandlemons.com" in url or
+      "feelgoodfoodie.net" in url or
+      "servingdumplings.com" in url or
+      "budgetbytes.com" in url):
+        print("DEBUG: URL is from a supported site (e.g., Half Baked Harvest, Minimalist Baker, David Lebovitz, Damn Delicious, Love and Lemons, Budget Bytes).")
+        wprm_recipe = extract_wprm_recipe(soup)
+        if wprm_recipe:
+            print("DEBUG: Successfully extracted recipe.")
+            return wprm_recipe
         else:
-            print("DEBUG: Failed to extract Half Baked Harvest recipe.")
+            print("DEBUG: Failed to extract recipe.")
 
     # 3. Structured data (JSON-LD)
     structured_recipe = extract_recipe_from_jsonld(soup)

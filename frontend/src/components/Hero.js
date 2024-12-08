@@ -53,6 +53,11 @@ function Hero({ url, setUrl, handleFetchRecipe, error }) {
               <li><a href="https://www.thepioneerwoman.com" target="_blank" rel="noopener noreferrer">https://www.thepioneerwoman.com</a></li>
               <li><a href="https://www.marthastewart.com" target="_blank" rel="noopener noreferrer">https://www.marthastewart.com</a></li>
               <li><a href="https://www.jamieoliver.com" target="_blank" rel="noopener noreferrer">https://www.jamieoliver.com</a></li>
+              <li><a href="https://minimalistbaker.com" target="_blank" rel="noopener noreferrer">https://minimalistbaker.com</a></li>
+              <li><a href="https://www.davidlebovitz.com" target="_blank" rel="noopener noreferrer">https://www.davidlebovitz.com</a></li>
+              <li><a href="https://www.budgetbytes.com" target="_blank" rel="noopener noreferrer">https://www.budgetbytes.com</a></li>
+              <li><a href="https://feelgoodfoodie.net" target="_blank" rel="noopener noreferrer">https://feelgoodfoodie.net</a></li>
+              <li><a href="https://www.servingdumplings.com" target="_blank" rel="noopener noreferrer">https://www.servingdumplings.com</a></li>
             </ul>
           </Collapsible>
           <button onClick={() => setIsOpen(!isOpen)} className="toggle-supported">
@@ -60,15 +65,13 @@ function Hero({ url, setUrl, handleFetchRecipe, error }) {
           </button>
           <Collapsible isOpen={isOpen}>
             <ul>
+              <li>https://www.onceuponachef.com</li>
               <li>https://pinchofyum.com</li>
-              <li>https://minimalistbaker.com</li>
-              <li>https://www.davidlebovitz.com</li>
               <li>https://damndelicious.net</li>
               <li>https://joythebaker.com</li>
               <li>https://www.loveandlemons.com</li>
               <li>https://food52.com</li>
               <li>https://cookieandkate.com</li>
-              <li>https://www.budgetbytes.com</li>
               <li>https://barefootcontessa.com</li>
             </ul>
           </Collapsible>

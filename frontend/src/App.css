@@ -20,7 +20,27 @@ body {
   text-align: center;
   border-bottom: 1px solid #653939;
 }
+/* Add this to your CSS file */
+.scrollable {
+  max-height: 150px; /* Limit the height of the scrollable area */
+  overflow-y: auto; /* Enable vertical scrolling */
+  border: 1px solid #ddd; /* Optional: Add a border for better visibility */
+  padding: 10px;
+  margin-top: 10px; /* Add space between elements */
+}
 
+.scrollable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollable::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+.scrollable::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
 .hero-content {
   max-width: 37.5rem; /* 600px */
   margin: 0 auto;

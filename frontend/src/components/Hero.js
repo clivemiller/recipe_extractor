@@ -42,25 +42,25 @@ function Hero({ url, setUrl, handleFetchRecipe, error }) {
             Websites that return best results {`(Tested sites)`}
           </button>
           <Collapsible isOpen={isOpen}>
-            <ul>
-              <li><a href="https://www.inspiredtaste.net" target="_blank" rel="noopener noreferrer">https://www.inspiredtaste.net</a></li>
-              <li><a href="https://www.epicurious.com" target="_blank" rel="noopener noreferrer">https://www.epicurious.com</a></li>
-              <li><a href="https://www.seriouseats.com" target="_blank" rel="noopener noreferrer">https://www.seriouseats.com</a></li>
-              <li><a href="https://www.allrecipes.com" target="_blank" rel="noopener noreferrer">https://www.allrecipes.com</a></li>
-              <li><a href="https://www.halfbakedharvest.com" target="_blank" rel="noopener noreferrer">https://www.halfbakedharvest.com</a></li>
-              <li><a href="https://smittenkitchen.com" target="_blank" rel="noopener noreferrer">https://smittenkitchen.com</a></li>
-              <li><a href="https://www.simplyrecipes.com" target="_blank" rel="noopener noreferrer">https://www.simplyrecipes.com</a></li>
-              <li><a href="https://www.thepioneerwoman.com" target="_blank" rel="noopener noreferrer">https://www.thepioneerwoman.com</a></li>
-              <li><a href="https://www.marthastewart.com" target="_blank" rel="noopener noreferrer">https://www.marthastewart.com</a></li>
-              <li><a href="https://www.jamieoliver.com" target="_blank" rel="noopener noreferrer">https://www.jamieoliver.com</a></li>
-              <li><a href="https://minimalistbaker.com" target="_blank" rel="noopener noreferrer">https://minimalistbaker.com</a></li>
-              <li><a href="https://www.davidlebovitz.com" target="_blank" rel="noopener noreferrer">https://www.davidlebovitz.com</a></li>
-              <li><a href="https://www.budgetbytes.com" target="_blank" rel="noopener noreferrer">https://www.budgetbytes.com</a></li>
-              <li><a href="https://feelgoodfoodie.net" target="_blank" rel="noopener noreferrer">https://feelgoodfoodie.net</a></li>
-              <li><a href="https://www.servingdumplings.com" target="_blank" rel="noopener noreferrer">https://www.servingdumplings.com</a></li>
-              <li><a href="https://healthyrecipesblogs.com" target="_blank" rel="noopener noreferrer">https://healthyrecipesblogs.com</a></li>
-              <li><a href="hhttps://www.spendwithpennies.com" target="_blank" rel="noopener noreferrer">hhttps://www.spendwithpennies.com</a></li>
-            </ul>
+            <div className="scrollable">
+                <li><a href="https://www.inspiredtaste.net" target="_blank" rel="noopener noreferrer">https://www.inspiredtaste.net</a></li>
+                <li><a href="https://www.epicurious.com" target="_blank" rel="noopener noreferrer">https://www.epicurious.com</a></li>
+                <li><a href="https://www.seriouseats.com" target="_blank" rel="noopener noreferrer">https://www.seriouseats.com</a></li>
+                <li><a href="https://www.allrecipes.com" target="_blank" rel="noopener noreferrer">https://www.allrecipes.com</a></li>
+                <li><a href="https://www.halfbakedharvest.com" target="_blank" rel="noopener noreferrer">https://www.halfbakedharvest.com</a></li>
+                <li><a href="https://smittenkitchen.com" target="_blank" rel="noopener noreferrer">https://smittenkitchen.com</a></li>
+                <li><a href="https://www.simplyrecipes.com" target="_blank" rel="noopener noreferrer">https://www.simplyrecipes.com</a></li>
+                <li><a href="https://www.thepioneerwoman.com" target="_blank" rel="noopener noreferrer">https://www.thepioneerwoman.com</a></li>
+                <li><a href="https://www.marthastewart.com" target="_blank" rel="noopener noreferrer">https://www.marthastewart.com</a></li>
+                <li><a href="https://www.jamieoliver.com" target="_blank" rel="noopener noreferrer">https://www.jamieoliver.com</a></li>
+                <li><a href="https://minimalistbaker.com" target="_blank" rel="noopener noreferrer">https://minimalistbaker.com</a></li>
+                <li><a href="https://www.davidlebovitz.com" target="_blank" rel="noopener noreferrer">https://www.davidlebovitz.com</a></li>
+                <li><a href="https://www.budgetbytes.com" target="_blank" rel="noopener noreferrer">https://www.budgetbytes.com</a></li>
+                <li><a href="https://feelgoodfoodie.net" target="_blank" rel="noopener noreferrer">https://feelgoodfoodie.net</a></li>
+                <li><a href="https://www.servingdumplings.com" target="_blank" rel="noopener noreferrer">https://www.servingdumplings.com</a></li>
+                <li><a href="https://healthyrecipesblogs.com" target="_blank" rel="noopener noreferrer">https://healthyrecipesblogs.com</a></li>
+                <li><a href="https://www.spendwithpennies.com" target="_blank" rel="noopener noreferrer">https://www.spendwithpennies.com</a></li>
+            </div>
           </Collapsible>
           <button onClick={() => setIsOpen(!isOpen)} className="toggle-supported">
             Sites that have known issues - will be supported soon!

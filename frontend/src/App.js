@@ -27,7 +27,7 @@ function App() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:5000/extract-recipe?url=${encodeURIComponent(url)}`
+        `https://recipe-extractor-backend.onrender.com/extract-recipe?url=${encodeURIComponent(url)}`
       );
       const data = await response.json();
 

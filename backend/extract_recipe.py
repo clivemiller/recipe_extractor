@@ -230,7 +230,7 @@ def extract_wprm_recipe(soup):
 
 def extract_tasty_recipes(soup):
     """
-    Extract recipe data from pages using the Tasty Recipes format.
+    Extract recipe data from pages using the Tasty Recipes format, including handling grouped ingredients.
     
     :param soup: BeautifulSoup object of the page HTML
     :return: Dictionary containing recipe name, ingredients, and instructions
@@ -242,29 +242,53 @@ def extract_tasty_recipes(soup):
     recipe_name = name_tag.get_text(strip=True) if name_tag else "Untitled Recipe"
     logger.debug(f"Extracted recipe name: {recipe_name}")
     
-    # Extract Ingredients
+    # Extract Ingredients (handling grouped sections)
     ingredients = []
     ingredients_container = soup.select_one('.tasty-recipes-ingredients-body')
+    
     if ingredients_container:
         logger.debug("Found ingredients container.")
-        for li in ingredients_container.find_all('li', class_='ingredient'):
-            # Filter out ad-related elements
-            ad_elements = li.select('[id^="AdThrive"], iframe, script, .ad-container')
-            for ad in ad_elements:
-                ad.decompose()
-
-            ingredient_text = li.get_text(" ", strip=True)
-            if ingredient_text:
-                ingredients.append(ingredient_text)
-                logger.debug(f"Extracted ingredient: {ingredient_text}")
+        
+        # Step 1: Remove all advertisement and irrelevant elements within the ingredients container
+        ad_selectors = ['div[id^="AdThrive"]', 'iframe', 'script', '.ad-container']
+        for ad in ingredients_container.select(', '.join(ad_selectors)):
+            ad.decompose()
+            logger.debug("Removed an advertisement or irrelevant element from ingredients.")
+        
+        # Step 2: Iterate over each ingredient group
+        for group in ingredients_container.find_all(['h4', 'ul']):
+            if group.name == 'h4':
+                # Start a new ingredient group
+                current_group = group.get_text(strip=True)
+                ingredients.append(f"{current_group}:")
+                logger.debug(f"Started new ingredient group: {current_group}")
+            elif group.name == 'ul':
+                # Process all <li> elements within the current <ul>
+                li_elements = group.find_all('li')
+                logger.debug(f"Found ingredient group list: {li_elements}")
+                for li in li_elements:
+                    ingredient_text = li.get_text(" ", strip=True)
+                    if ingredient_text:
+                        # Append the ingredient with indentation for clarity
+                        ingredients.append(f"  - {ingredient_text}")
+                        logger.debug(f"Extracted ingredient: {ingredient_text}")
     else:
         logger.warning("Ingredients container not found.")
     
     # Extract Instructions
     instructions = []
     instructions_container = soup.select_one('.tasty-recipes-instructions-body')
+    
     if instructions_container:
         logger.debug("Found instructions container.")
+        
+        # Remove all advertisement and irrelevant elements within the instructions container
+        ad_selectors = ['div[id^="AdThrive"]', 'iframe', 'script', '.ad-container']
+        for ad in instructions_container.select(', '.join(ad_selectors)):
+            ad.decompose()
+            logger.debug("Removed an advertisement or irrelevant element from instructions.")
+        
+        # Iterate over each instruction step
         for li in instructions_container.find_all('li'):
             instruction_text = li.get_text(" ", strip=True)
             if instruction_text:
@@ -272,35 +296,6 @@ def extract_tasty_recipes(soup):
                 logger.debug(f"Extracted instruction step: {instruction_text}")
     else:
         logger.warning("Instructions container not found.")
-    
-    # Commented out for future implementation:
-    # Extract Description
-    # description = None
-    # description_tag = soup.select_one('.tasty-recipes-description-body')
-    # if description_tag:
-    #     description = description_tag.get_text(" ", strip=True)
-    #     logger.debug(f"Extracted recipe description: {description}")
-    
-    # Extract Prep Time
-    # prep_time = None
-    # prep_time_tag = soup.select_one('.tasty-recipes-prep-time')
-    # if prep_time_tag:
-    #     prep_time = prep_time_tag.get_text(strip=True)
-    #     logger.debug(f"Extracted prep time: {prep_time}")
-    
-    # Extract Cook Time
-    # cook_time = None
-    # cook_time_tag = soup.select_one('.tasty-recipes-cook-time')
-    # if cook_time_tag:
-    #     cook_time = cook_time_tag.get_text(strip=True)
-    #     logger.debug(f"Extracted cook time: {cook_time}")
-    
-    # Extract Total Time
-    # total_time = None
-    # total_time_tag = soup.select_one('.tasty-recipes-total-time')
-    # if total_time_tag:
-    #     total_time = total_time_tag.get_text(strip=True)
-    #     logger.debug(f"Extracted total time: {total_time}")
     
     # Combine and return the result
     recipe_data = {
@@ -316,7 +311,6 @@ def extract_tasty_recipes(soup):
     else:
         logger.warning("No ingredients or instructions found.")
         return None
-
 
 def extract_recipe_from_jsonld(soup):
     jsonld_tags = soup.find_all('script', type='application/ld+json')

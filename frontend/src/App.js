@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Hero from './components/Hero';
 import RecipeResult from './components/RecipeResult';
 import Navbar from './components/Navbar';
@@ -10,9 +10,9 @@ function App() {
   const [url, setUrl] = useState('');
   const [recipe, setRecipe] = useState(null);
   const [error, setError] = useState('');
-  const [user, setUser] = useState(null); // State for logged-in user
+  const [user, setUser] = useState(null);
 
-  // Restore user from localStorage when the app loads
+  // Restore user from localStorage on app load
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
@@ -20,7 +20,6 @@ function App() {
     }
   }, []);
 
-  // Handle recipe fetching
   const handleFetchRecipe = async (e, navigate) => {
     e.preventDefault();
     setRecipe(null);
@@ -28,13 +27,13 @@ function App() {
 
     try {
       const response = await fetch(
-        `https://recipe-extractor-backend.onrender.com/extract-recipe?url=${encodeURIComponent(url)}`
+        `http://127.0.0.1:5000/extract-recipe?url=${encodeURIComponent(url)}`
       );
       const data = await response.json();
 
       if (response.ok) {
         setRecipe(data);
-        navigate('/results', { state: { url } }); // Pass URL in state
+        navigate('/results', { state: { url } });
       } else {
         setError(data.error || 'Failed to fetch recipe');
       }
@@ -50,16 +49,12 @@ function App() {
     setError('');
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    setUser(null);
-  };
-
   const AppRoutes = () => {
     const navigate = useNavigate();
 
     return (
       <Routes>
+        {/* Main Recipe Extractor */}
         <Route
           path="/recipe_extractor"
           element={
@@ -71,24 +66,33 @@ function App() {
             />
           }
         />
+
+        {/* Results Page */}
         <Route
           path="/results"
           element={
             recipe ? (
               <RecipeResult recipe={recipe} user={user} onReset={handleReset} />
             ) : (
-              <div>Please fetch a recipe first!</div>
+              <Navigate to="/recipe_extractor" replace /> /* Redirect if no recipe */
             )
           }
         />
+
+        {/* Recipe Box */}
         <Route
           path="/recipe-box"
-          element={<RecipeBox user={user} />} // Pass user to RecipeBox
+          element={<RecipeBox user={user} />}
         />
+
+        {/* Account Page */}
         <Route
           path="/account"
-          element={<Account user={user} setUser={setUser} />} // Pass user and setUser to Account
+          element={<Account user={user} setUser={setUser} />}
         />
+
+        {/* Redirect for unknown paths */}
+        <Route path="*" element={<Navigate to="/recipe_extractor" replace />} />
       </Routes>
     );
   };
@@ -96,7 +100,7 @@ function App() {
   return (
     <Router>
       <div className="app">
-        <Navbar user={user} onLogout={handleLogout} /> {/* Pass user and logout handler to Navbar */}
+        <Navbar user={user} onLogout={() => setUser(null)} />
         <AppRoutes />
       </div>
     </Router>

@@ -131,10 +131,12 @@ body {
 .start-over {
   background: none;
   border: none;
-  color: #2a9d8f;
+  color: #625f54;
   cursor: pointer;
   text-decoration: underline;
+  text-align: right;
   font-size: 0.9rem;
+  padding-left: 48%;
 }
 
 .recipe-image {
@@ -201,6 +203,58 @@ body {
 
 .actions button:hover {
   background: #21867a;
+}
+.navbar {
+  background-color: #2a9d8f;
+  padding: 1.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar ul {
+  list-style: none;
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar .nav-link {
+  color: rgb(255, 255, 255);
+  text-decoration: none;
+  font-size: 1rem;
+}
+
+.navbar .nav-link:hover {
+  text-decoration: underline;
+}
+
+a {
+  color: #625f54; /* Change to your desired color */
+  text-decoration: none; /* Optional: remove underline */
+}
+
+a:hover {
+  color: #47453b; /* Optional: Change color on hover */
+  text-decoration: underline; /* Optional: add underline on hover */
+}
+
+.page-content {
+  text-align: center;
+  margin: 2rem auto;
+  font-size: 1.5rem;
+  color: #555;
+}
+
+.coming-soon-text {
+  text-align: center;
+  padding: 2rem auto;
+  font-size: 1.5rem;
+  color: #ffffff;
+}
+.recipe-result-link {
+  text-align: left;
 }
 
 /* Responsive Styles */

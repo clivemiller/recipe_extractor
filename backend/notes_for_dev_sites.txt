@@ -6,6 +6,10 @@ wrpm should be able to instantly integrate these into the wrpm halfbaked harvest
     https://damndelicious.net
     https://www.loveandlemons.com
 
+
+    add to wrpm: 
+        https://www.saltandlavender.com
+
     title thing
     <h2 class="wprm-recipe-name wprm-block-text-normal" id="roasted-chicken-with-garlic-herbs">Roasted Chicken with Garlic &amp; Herbs</h2>
 custum function: 

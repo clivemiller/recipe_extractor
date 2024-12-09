@@ -18,9 +18,9 @@ function App() {
 
     try {
       const response = await fetch(
-        // `https://recipe-extractor-backend.onrender.com/extract-recipe?url=${encodeURIComponent(url)}`
+        `https://recipe-extractor-backend.onrender.com/extract-recipe?url=${encodeURIComponent(url)}`
         // for local testing
-        `http://127.0.0.1:5000/extract-recipe?url=${encodeURIComponent(url)}`
+        // `http://127.0.0.1:5000/extract-recipe?url=${encodeURIComponent(url)}`
       );
       const data = await response.json();
 

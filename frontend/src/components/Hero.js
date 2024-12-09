@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Collapsible from './Collapsible';
+import logo from '../../src/logo.png';
 
 function Hero({ url, setUrl, handleFetchRecipe, error }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,7 +22,7 @@ function Hero({ url, setUrl, handleFetchRecipe, error }) {
   return (
     <div className="hero">
       <div className="hero-content">
-        <img src="/logo.png" alt="Logo" className="hero-logo" />
+        <img src={logo} alt="Logo" className="hero-logo" />
         <h1>The Recipe Fox</h1>
         <p>Paste a recipe URL, and we'll extract all the details for you.</p>
         <form onSubmit={handleFetchRecipe} className="hero-form">

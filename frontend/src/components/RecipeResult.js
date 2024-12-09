@@ -1,24 +1,37 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 function RecipeResult({ recipe, onReset }) {
+  const location = useLocation();
+  const navigate = useNavigate();
   const resultRef = useRef(null);
 
-  // Utility function to decode HTML entities
+  const { url } = location.state || {}; // Retrieve URL from state
+
+  // Utility to get the base website name
+  const getBaseWebsiteName = (url) => {
+    try {
+      const hostname = new URL(url).hostname;
+      // Remove 'www.' if present
+      return hostname.startsWith('www.') ? hostname.slice(4) : hostname;
+    } catch (error) {
+      console.error('Invalid URL:', url);
+      return url; // Fallback to the original URL if parsing fails
+    }
+  };
+
   const decodeHTML = (html) => {
     const txt = document.createElement('textarea');
     txt.innerHTML = html;
     return txt.value;
   };
 
-  // Utility function to format instructions
   const formatInstructions = (instructions) => {
     if (instructions.length === 1) {
       const singleInstruction = instructions[0];
-      // Regular expression to match numbered steps (e.g., "1. Step one.")
       const stepRegex = /\d+\.\s+/g;
       if (stepRegex.test(singleInstruction)) {
-        // Split the string at each numbered step
         const steps = singleInstruction.split(stepRegex).filter(Boolean);
         return steps;
       }
@@ -26,7 +39,6 @@ function RecipeResult({ recipe, onReset }) {
     return instructions;
   };
 
-  // Decode necessary recipe fields
   const decodedRecipe = {
     ...recipe,
     name: recipe.name ? decodeHTML(recipe.name) : 'Untitled Recipe',
@@ -36,7 +48,6 @@ function RecipeResult({ recipe, onReset }) {
     instructions: recipe.instructions
       ? formatInstructions(recipe.instructions.map((inst) => decodeHTML(inst)))
       : [],
-    // If other fields might contain HTML entities, decode them similarly
   };
 
   const handleCopy = useCallback(() => {
@@ -56,12 +67,28 @@ function RecipeResult({ recipe, onReset }) {
     window.print();
   }, []);
 
+  // Redirect to homepage if no recipe is available
+  useEffect(() => {
+    if (!recipe) {
+      navigate('/recipe_extractor'); // Navigate to the homepage
+    }
+  }, [recipe, navigate]);
+
+  if (!recipe) {
+    return null; // Render nothing while redirecting
+  }
+
   return (
     <div className="recipe-result" ref={resultRef}>
       <header className="result-header">
-        <button onClick={onReset} className="start-over" aria-label="Start Over">
-          Start Over
-        </button>
+        <h4 className="recipe-result-link">
+          <a href={url} target="_blank" rel="noopener noreferrer">
+            Recipe from: {getBaseWebsiteName(url)}
+          </a>
+          <button onClick={onReset} className="start-over" aria-label="Start Over">
+            <p>Start Over</p>
+          </button>
+        </h4>
       </header>
       {decodedRecipe.image && (
         <img
@@ -77,28 +104,6 @@ function RecipeResult({ recipe, onReset }) {
         />
       )}
       <h2 className="recipe-title">{decodedRecipe.name}</h2>
-      <div className="recipe-meta">
-        {decodedRecipe.recipeYield && (
-          <span>
-            <strong>Servings:</strong> {decodedRecipe.recipeYield}
-          </span>
-        )}
-        {decodedRecipe.prepTime && (
-          <span>
-            <strong>Prep Time:</strong> {parseTime(decodedRecipe.prepTime)}
-          </span>
-        )}
-        {decodedRecipe.cookTime && (
-          <span>
-            <strong>Cook Time:</strong> {parseTime(decodedRecipe.cookTime)}
-          </span>
-        )}
-        {decodedRecipe.nutrition && decodedRecipe.nutrition.calories && (
-          <span>
-            <strong>Calories:</strong> {decodedRecipe.nutrition.calories}
-          </span>
-        )}
-      </div>
       {decodedRecipe.ingredients && decodedRecipe.ingredients.length > 0 ? (
         <div className="ingredients-section">
           <h3>Ingredients</h3>
@@ -129,24 +134,10 @@ function RecipeResult({ recipe, onReset }) {
       )}
       <div className="actions">
         <button onClick={handlePrint}>Print</button>
-        <button onClick={handleCopy}>Save to Recipe Book -coming soon</button>
+        <button onClick={handleCopy}>Save to Recipe Box -coming soon</button>
       </div>
     </div>
   );
-}
-
-function parseTime(isoTime) {
-  // A simple parser for ISO time durations like PT15M, PT1H, etc.
-  // Example: PT15M -> 15 minutes, PT1H -> 1 hour, PT1H30M -> 1 hour 30 minutes
-  const regex = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/;
-  const match = isoTime.match(regex);
-  if (!match) return isoTime;
-
-  const hours = match[1] ? `${match[1]} hour${match[1] !== '1' ? 's' : ''}` : '';
-  const minutes = match[2] ? `${match[2]} minute${match[2] !== '1' ? 's' : ''}` : '';
-  const seconds = match[3] ? `${match[3]} second${match[3] !== '1' ? 's' : ''}` : '';
-
-  return [hours, minutes, seconds].filter(Boolean).join(' ');
 }
 
 RecipeResult.propTypes = {
@@ -161,7 +152,7 @@ RecipeResult.propTypes = {
     }),
     ingredients: PropTypes.arrayOf(PropTypes.string),
     instructions: PropTypes.arrayOf(PropTypes.string),
-  }).isRequired,
+  }),
   onReset: PropTypes.func.isRequired,
 };
 

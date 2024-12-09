@@ -40,7 +40,7 @@ function Hero({ url, setUrl, handleFetchRecipe, error }) {
         </button>
         <div className="supported-sites">
           <button onClick={() => setIsOpen(!isOpen)} className="toggle-supported">
-            Websites that return best results {`(Tested sites)`}
+            <span>Websites that return best results {`(Tested sites)`}, Our latest update added a host more of supported sites, too many to fit here!</span>
           </button>
           <Collapsible isOpen={isOpen}>
             <div className="scrollable">

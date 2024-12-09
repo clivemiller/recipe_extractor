@@ -85,9 +85,6 @@ function RecipeResult({ recipe, onReset }) {
           <a href={url} target="_blank" rel="noopener noreferrer">
             Recipe from: {getBaseWebsiteName(url)}
           </a>
-          <button onClick={onReset} className="start-over" aria-label="Start Over">
-            <p>Start Over</p>
-          </button>
         </h4>
       </header>
       {decodedRecipe.image && (

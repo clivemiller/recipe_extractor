@@ -261,6 +261,8 @@ def extract_recipe(url):
 
     soup = BeautifulSoup(response.text, 'html.parser')
 
+    isWPRM = soup.select_one('.wprm-recipe-ingredients-container')
+
     # 1. Check if Smitten Kitchen
     if "smittenkitchen.com" in url:
         print("DEBUG: URL is from Smitten Kitchen.")
@@ -271,18 +273,9 @@ def extract_recipe(url):
         else:
             print("DEBUG: Failed to extract Smitten Kitchen recipe.")
 
-    # 2. Check if Half Baked Harvest
-    elif ("halfbakedharvest.com" in url or
-      "minimalistbaker.com" in url or
-      "davidlebovitz.com" in url or
-      "damndelicious.net" in url or
-      "loveandlemons.com" in url or
-      "feelgoodfoodie.net" in url or
-      "servingdumplings.com" in url or
-      "spendwithpennies.com" in url or
-      "healthyrecipesblogs.com" in url or
-      "budgetbytes.com" in url):
-        print("DEBUG: URL is from a supported site (e.g., Half Baked Harvest, Minimalist Baker, David Lebovitz, Damn Delicious, Love and Lemons, Budget Bytes).")
+    # 2. Check if wprm
+    elif (isWPRM):
+        print("DEBUG: URL is from a wprm site")
         wprm_recipe = extract_wprm_recipe(soup)
         if wprm_recipe:
             print("DEBUG: Successfully extracted recipe.")

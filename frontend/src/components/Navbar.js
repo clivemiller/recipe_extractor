@@ -1,10 +1,10 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
-function Navbar() {
+function Navbar({ user, onLogout }) {
   return (
     <nav className="navbar">
-      <ul>
+      <ul className="navbar-links">
         <li>
           <NavLink to="/recipe_extractor" className="nav-link">
             Home
@@ -15,12 +15,25 @@ function Navbar() {
             Recipe Box
           </NavLink>
         </li>
-        <li>
+        {user ? (
           <NavLink to="/account" className="nav-link">
-            Account
+          Welcome, {user.username}!
           </NavLink>
-        </li>
+        ) : (
+          <li>
+            <NavLink to="/account" className="nav-link">
+              Account
+            </NavLink>
+          </li>
+        )}
       </ul>
+      <div className="navbar-left">
+        {user && (
+          <button className="logout-button" onClick={onLogout}>
+            Log Out
+          </button>
+        )}
+      </div>
     </nav>
   );
 }

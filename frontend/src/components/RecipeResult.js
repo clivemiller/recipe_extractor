@@ -2,18 +2,16 @@ import React, { useRef, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-function RecipeResult({ recipe, onReset }) {
+function RecipeResult({ recipe, onReset, user }) {
   const location = useLocation();
   const navigate = useNavigate();
   const resultRef = useRef(null);
 
   const { url } = location.state || {}; // Retrieve URL from state
 
-  // Utility to get the base website name
   const getBaseWebsiteName = (url) => {
     try {
       const hostname = new URL(url).hostname;
-      // Remove 'www.' if present
       return hostname.startsWith('www.') ? hostname.slice(4) : hostname;
     } catch (error) {
       console.error('Invalid URL:', url);
@@ -50,27 +48,47 @@ function RecipeResult({ recipe, onReset }) {
       : [],
   };
 
-  const handleCopy = useCallback(() => {
-    const text = resultRef.current.innerText;
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        alert('Recipe copied to clipboard!');
+  const handleSave = useCallback(() => {
+    if (!user) {
+      alert('You must be logged in to save recipes.');
+      navigate('/account');
+      return;
+    }
+
+    const API_BASE_URL = 'https://recipe-extractor-backend.onrender.com';
+
+    fetch(`${API_BASE_URL}/api/users/${user.id}/saved-recipes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recipe_name: decodedRecipe.name,
+        recipe_data: {
+          ingredients: decodedRecipe.ingredients,
+          instructions: decodedRecipe.instructions,
+        },
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.error) {
+          alert(`Failed to save recipe: ${data.error}`);
+        } else {
+          alert('Recipe saved successfully!');
+        }
       })
       .catch((err) => {
-        console.error('Failed to copy: ', err);
-        alert('Failed to copy recipe. Please try again.');
+        console.error('Error saving recipe:', err);
+        alert('Failed to save recipe. Please try again.');
       });
-  }, [resultRef]);
+  }, [decodedRecipe, navigate, user]);
 
   const handlePrint = useCallback(() => {
     window.print();
   }, []);
 
-  // Redirect to homepage if no recipe is available
   useEffect(() => {
     if (!recipe) {
-      navigate('/recipe_extractor'); // Navigate to the homepage
+      navigate('/recipe_extractor'); // Redirect if no recipe
     }
   }, [recipe, navigate]);
 
@@ -131,7 +149,7 @@ function RecipeResult({ recipe, onReset }) {
       )}
       <div className="actions">
         <button onClick={handlePrint}>Print</button>
-        <button onClick={handleCopy}>Save to Recipe Box -coming soon</button>
+        <button onClick={handleSave}>Save to Recipe Box</button>
       </div>
     </div>
   );
@@ -151,6 +169,7 @@ RecipeResult.propTypes = {
     instructions: PropTypes.arrayOf(PropTypes.string),
   }),
   onReset: PropTypes.func.isRequired,
+  user: PropTypes.object, // Add user as a prop
 };
 
 export default RecipeResult;

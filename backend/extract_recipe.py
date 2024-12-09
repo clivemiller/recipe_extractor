@@ -228,6 +228,96 @@ def extract_wprm_recipe(soup):
         "instructions": instructions
     } if ingredients or instructions else None
 
+def extract_tasty_recipes(soup):
+    """
+    Extract recipe data from pages using the Tasty Recipes format.
+    
+    :param soup: BeautifulSoup object of the page HTML
+    :return: Dictionary containing recipe name, ingredients, and instructions
+    """
+    logger.debug("Starting Tasty Recipes extraction.")
+    
+    # Extract Recipe Name
+    name_tag = soup.select_one('h2.tasty-recipes-title')
+    recipe_name = name_tag.get_text(strip=True) if name_tag else "Untitled Recipe"
+    logger.debug(f"Extracted recipe name: {recipe_name}")
+    
+    # Extract Ingredients
+    ingredients = []
+    ingredients_container = soup.select_one('.tasty-recipes-ingredients-body')
+    if ingredients_container:
+        logger.debug("Found ingredients container.")
+        for li in ingredients_container.find_all('li', class_='ingredient'):
+            # Filter out ad-related elements
+            ad_elements = li.select('[id^="AdThrive"], iframe, script, .ad-container')
+            for ad in ad_elements:
+                ad.decompose()
+
+            ingredient_text = li.get_text(" ", strip=True)
+            if ingredient_text:
+                ingredients.append(ingredient_text)
+                logger.debug(f"Extracted ingredient: {ingredient_text}")
+    else:
+        logger.warning("Ingredients container not found.")
+    
+    # Extract Instructions
+    instructions = []
+    instructions_container = soup.select_one('.tasty-recipes-instructions-body')
+    if instructions_container:
+        logger.debug("Found instructions container.")
+        for li in instructions_container.find_all('li'):
+            instruction_text = li.get_text(" ", strip=True)
+            if instruction_text:
+                instructions.append(instruction_text)
+                logger.debug(f"Extracted instruction step: {instruction_text}")
+    else:
+        logger.warning("Instructions container not found.")
+    
+    # Commented out for future implementation:
+    # Extract Description
+    # description = None
+    # description_tag = soup.select_one('.tasty-recipes-description-body')
+    # if description_tag:
+    #     description = description_tag.get_text(" ", strip=True)
+    #     logger.debug(f"Extracted recipe description: {description}")
+    
+    # Extract Prep Time
+    # prep_time = None
+    # prep_time_tag = soup.select_one('.tasty-recipes-prep-time')
+    # if prep_time_tag:
+    #     prep_time = prep_time_tag.get_text(strip=True)
+    #     logger.debug(f"Extracted prep time: {prep_time}")
+    
+    # Extract Cook Time
+    # cook_time = None
+    # cook_time_tag = soup.select_one('.tasty-recipes-cook-time')
+    # if cook_time_tag:
+    #     cook_time = cook_time_tag.get_text(strip=True)
+    #     logger.debug(f"Extracted cook time: {cook_time}")
+    
+    # Extract Total Time
+    # total_time = None
+    # total_time_tag = soup.select_one('.tasty-recipes-total-time')
+    # if total_time_tag:
+    #     total_time = total_time_tag.get_text(strip=True)
+    #     logger.debug(f"Extracted total time: {total_time}")
+    
+    # Combine and return the result
+    recipe_data = {
+        "name": recipe_name,
+        "ingredients": ingredients,
+        "instructions": instructions
+    }
+    
+    # Only return the recipe if there is meaningful content
+    if ingredients or instructions:
+        logger.debug("Successfully extracted Tasty Recipes recipe.")
+        return recipe_data
+    else:
+        logger.warning("No ingredients or instructions found.")
+        return None
+
+
 def extract_recipe_from_jsonld(soup):
     jsonld_tags = soup.find_all('script', type='application/ld+json')
     for tag in jsonld_tags:
@@ -282,6 +372,15 @@ def extract_recipe(url):
             return wprm_recipe
         else:
             print("DEBUG: Failed to extract recipe.")
+    elif soup.select_one('.tasty-recipes-entry-content'):
+        print("DEBUG: URL is from a Tasty Recipes site.")
+        tasty_recipe = extract_tasty_recipes(soup)
+        if tasty_recipe:
+            print("DEBUG: Successfully extracted Tasty Recipes recipe.")
+            return tasty_recipe
+        else:
+            print("DEBUG: Failed to extract Tasty Recipes recipe.")
+
 
     # 3. Structured data (JSON-LD)
     structured_recipe = extract_recipe_from_jsonld(soup)

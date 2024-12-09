@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import Hero from './components/Hero';
 import RecipeResult from './components/RecipeResult';
@@ -10,7 +10,17 @@ function App() {
   const [url, setUrl] = useState('');
   const [recipe, setRecipe] = useState(null);
   const [error, setError] = useState('');
+  const [user, setUser] = useState(null); // State for logged-in user
 
+  // Restore user from localStorage when the app loads
+  useEffect(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+  }, []);
+
+  // Handle recipe fetching
   const handleFetchRecipe = async (e, navigate) => {
     e.preventDefault();
     setRecipe(null);
@@ -19,8 +29,6 @@ function App() {
     try {
       const response = await fetch(
         `https://recipe-extractor-backend.onrender.com/extract-recipe?url=${encodeURIComponent(url)}`
-        // for local testing
-        // `http://127.0.0.1:5000/extract-recipe?url=${encodeURIComponent(url)}`
       );
       const data = await response.json();
 
@@ -40,6 +48,11 @@ function App() {
     setUrl('');
     setRecipe(null);
     setError('');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setUser(null);
   };
 
   const AppRoutes = () => {
@@ -62,14 +75,20 @@ function App() {
           path="/results"
           element={
             recipe ? (
-              <RecipeResult recipe={recipe} onReset={handleReset} />
+              <RecipeResult recipe={recipe} user={user} onReset={handleReset} />
             ) : (
               <div>Please fetch a recipe first!</div>
             )
           }
         />
-        <Route path="/recipe-box" element={<RecipeBox />} />
-        <Route path="/account" element={<Account />} />
+        <Route
+          path="/recipe-box"
+          element={<RecipeBox user={user} />} // Pass user to RecipeBox
+        />
+        <Route
+          path="/account"
+          element={<Account user={user} setUser={setUser} />} // Pass user and setUser to Account
+        />
       </Routes>
     );
   };
@@ -77,7 +96,7 @@ function App() {
   return (
     <Router>
       <div className="app">
-        <Navbar />
+        <Navbar user={user} onLogout={handleLogout} /> {/* Pass user and logout handler to Navbar */}
         <AppRoutes />
       </div>
     </Router>

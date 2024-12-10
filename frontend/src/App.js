@@ -33,7 +33,7 @@ function App() {
 
       if (response.ok) {
         setRecipe(data);
-        navigate('/home/results', { state: { url } });
+        navigate('/results', { state: { url } });
       } else {
         setError(data.error || 'Failed to fetch recipe');
       }
@@ -69,7 +69,7 @@ function App() {
 
         {/* Results Page */}
         <Route
-          path="/home/results"
+          path="/results"
           element={
             recipe ? (
               <RecipeResult recipe={recipe} user={user} onReset={handleReset} />
@@ -81,13 +81,13 @@ function App() {
 
         {/* Recipe Box */}
         <Route
-          path="/home/recipe-box"
+          path="/recipe-box"
           element={<RecipeBox user={user} />}
         />
 
         {/* Account Page */}
         <Route
-          path="/home/account"
+          path="/account"
           element={<Account user={user} setUser={setUser} />}
         />
 

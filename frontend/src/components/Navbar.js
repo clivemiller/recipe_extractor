@@ -11,17 +11,17 @@ function Navbar({ user, onLogout }) {
           </NavLink>
         </li>
         <li>
-          <NavLink to="/home/recipe-box" className="nav-link">
+          <NavLink to="/recipe-box" className="nav-link">
             Recipe Box
           </NavLink>
         </li>
         {user ? (
-          <NavLink to="/home/account" className="nav-link">
+          <NavLink to="/account" className="nav-link">
           Welcome, {user.username}!
           </NavLink>
         ) : (
           <li>
-            <NavLink to="/home/account" className="nav-link">
+            <NavLink to="/account" className="nav-link">
               Account
             </NavLink>
           </li>

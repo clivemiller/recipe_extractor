@@ -3,10 +3,153 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 import json
 import re
 import logging
+import random
 
 # Configure logging once at the module level
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+# Example USER_AGENTS and PROXIES lists
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64)...",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)...",
+    # Add more user agents as needed
+]
+
+PROXIES = [
+    "http://proxy1.example.com:8080",
+    "http://proxy2.example.com:8080",
+    # Add more proxies as needed
+]
+
+def extract_recipe(url):
+    session = requests.Session()
+    
+    # Define fallback headers
+    fallback_headers = {
+        "User-Agent": random.choice(USER_AGENTS),
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1"
+    }
+    
+    # Update session headers with fallback headers
+    session.headers.update(fallback_headers)
+    
+    # Primary headers for the initial request
+    primary_headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+    
+    # Optionally, set a proxy
+    proxy = random.choice(PROXIES)
+    session.proxies.update({
+        "http": proxy,
+        "https": proxy
+    })
+    
+    logger.debug(f"Fetching URL: {url}")
+    
+    # Define a helper function to make requests
+    def make_request(headers):
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()  # Raises HTTPError for bad responses (4xx or 5xx)
+            return response
+        except requests.RequestException as e:
+            logger.error(f"Request with headers {headers} failed: {e}")
+            return None
+    
+    # First attempt with primary headers
+    response = make_request(primary_headers)
+    
+    # If the first attempt fails, retry with fallback headers
+    if response is None:
+        logger.info("Retrying with fallback headers...")
+        response = make_request(session.headers)
+    
+    # If both attempts fail, return None
+    if response is None:
+        logger.error("Both attempts to fetch the URL failed.")
+        return None
+    
+    # Proceed with processing the successful response
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    # Check for WPRM (WP Recipe Maker) structured data
+    isWPRM = soup.select_one('.wprm-recipe-ingredients-container')
+    
+    # 1. Check if Smitten Kitchen
+    if "smittenkitchen.com" in url:
+        logger.debug("URL is from Smitten Kitchen.")
+        smitten_recipe = extract_smittenkitchen_recipe(soup)
+        if smitten_recipe:
+            logger.debug("Successfully extracted Smitten Kitchen recipe.")
+            return smitten_recipe
+        else:
+            logger.debug("Failed to extract Smitten Kitchen recipe.")
+    
+    # 2. Check if WPRM
+    elif isWPRM:
+        logger.debug("URL is from a WPRM site.")
+        wprm_recipe = extract_wprm_recipe(soup)
+        if wprm_recipe:
+            logger.debug("Successfully extracted WPRM recipe.")
+            return wprm_recipe
+        else:
+            logger.debug("Failed to extract WPRM recipe.")
+    
+    # 3. Check if Tasty Recipes
+    elif soup.select_one('.tasty-recipes-entry-content'):
+        logger.debug("URL is from a Tasty Recipes site.")
+        tasty_recipe = extract_tasty_recipes(soup)
+        if tasty_recipe:
+            logger.debug("Successfully extracted Tasty Recipes recipe.")
+            return tasty_recipe
+        else:
+            logger.debug("Failed to extract Tasty Recipes recipe.")
+    
+    # 4. Check if Food Network
+    elif soup.select_one('section.o-AssetTitle'):
+        logger.debug("URL is from a Food Network site.")
+        foodnetwork_recipe = extract_foodnetwork_recipe(soup)
+        if foodnetwork_recipe:
+            logger.debug("Successfully extracted Food Network recipe.")
+            return foodnetwork_recipe
+        else:
+            logger.debug("Failed to extract Food Network recipe.")
+    
+    # 5. Structured data (JSON-LD)
+    else:
+        structured_recipe = extract_recipe_from_jsonld(soup)
+        if structured_recipe:
+            logger.debug("Found structured data.")
+            name = structured_recipe.get('name', '')
+            ingredients = structured_recipe.get('recipeIngredient', [])
+            instructions_data = structured_recipe.get('recipeInstructions', [])
+            instructions = []
+            if isinstance(instructions_data, list):
+                for step in instructions_data:
+                    if isinstance(step, str):
+                        instructions.append(step)
+                    elif isinstance(step, dict) and 'text' in step:
+                        instructions.append(step['text'])
+            else:
+                if isinstance(instructions_data, str):
+                    instructions = [instructions_data]
+    
+            return {
+                "name": name,
+                "ingredients": ingredients,
+                "instructions": instructions
+            }
+    
+        logger.debug("No structured data found.")
+    
+    logger.warning("No suitable recipe format found on the page.")
+    return None
 
 def extract_smittenkitchen_recipe(soup):
     def is_within_ad_div(tag):
@@ -238,15 +381,46 @@ def extract_tasty_recipes(soup):
     logger.debug("Starting Tasty Recipes extraction.")
     
     # Extract Recipe Name
-    name_tag = soup.select_one('h2.tasty-recipes-title')
+    name_tag = soup.select_one('.tasty-recipes-title')
     recipe_name = name_tag.get_text(strip=True) if name_tag else "Untitled Recipe"
     logger.debug(f"Extracted recipe name: {recipe_name}")
     
     # Extract Ingredients (handling grouped sections)
     ingredients = []
     ingredients_container = soup.select_one('.tasty-recipes-ingredients-body')
-    
-    if ingredients_container:
+    logger.debug(f"Initail container: {ingredients_container}")
+    if ingredients_container == None:
+        ingredients_container_container = soup.select_one('.tasty-recipes-ingredients')
+        logger.debug(f"Fallback container container: {ingredients_container_container}")
+        if ingredients_container_container: 
+            logger.debug("Found fallback container.")
+            ingredients_container = ingredients_container_container.select_one('[data-tasty-recipes-customization="body-color.color"]')
+            logger.debug(f"fallback container: {ingredients_container}")
+        
+            # Step 1: Remove all advertisement and irrelevant elements within the ingredients container
+            ad_selectors = ['div[id^="AdThrive"]', 'iframe', 'script', '.ad-container']
+            for ad in ingredients_container.select(', '.join(ad_selectors)):
+                ad.decompose()
+                logger.debug("Removed an advertisement or irrelevant element from ingredients.")
+            
+            # Step 2: Iterate over each ingredient group
+            for group in ingredients_container.find_all(['p', 'ul']):
+                if group.name == 'p':
+                    # Start a new ingredient group
+                    current_group = group.get_text(strip=True)
+                    ingredients.append(f"{current_group}:")
+                    logger.debug(f"Started new ingredient group: {current_group}")
+                elif group.name == 'ul':
+                    # Process all <li> elements within the current <ul>
+                    li_elements = group.find_all('li')
+                    logger.debug(f"Found ingredient group list: {li_elements}")
+                    for li in li_elements:
+                        ingredient_text = li.get_text(" ", strip=True)
+                        if ingredient_text:
+                            # Append the ingredient with indentation for clarity
+                            ingredients.append(f"  - {ingredient_text}")
+                            logger.debug(f"Extracted ingredient: {ingredient_text}")
+    elif ingredients_container:
         logger.debug("Found ingredients container.")
         
         # Step 1: Remove all advertisement and irrelevant elements within the ingredients container
@@ -278,8 +452,21 @@ def extract_tasty_recipes(soup):
     # Extract Instructions
     instructions = []
     instructions_container = soup.select_one('.tasty-recipes-instructions-body')
-    
-    if instructions_container:
+
+    if instructions_container == None:
+        instructions_container_container = soup.select_one('.tasty-recipes-instructions')
+        if instructions_container_container:
+            instructions_container = instructions_container_container.select_one('[data-tasty-recipes-customization="body-color.color"]')
+            logger.debug("Found fallback instructions container.")
+            
+            # Iterate over each instruction step
+            for _ in instructions_container.find_all('ol'):
+                for li in instructions_container.find_all('li'):
+                    instruction_text = li.get_text(" ", strip=True)
+                    if instruction_text:
+                        instructions.append(instruction_text)
+                        logger.debug(f"Extracted instruction step: {instruction_text}")
+    elif instructions_container:
         logger.debug("Found instructions container.")
         
         # Remove all advertisement and irrelevant elements within the instructions container
@@ -328,77 +515,81 @@ def extract_recipe_from_jsonld(soup):
             continue
     return None
 
-def extract_recipe(url):
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
-    print(f"DEBUG: Fetching URL: {url}")
+def extract_foodnetwork_recipe(soup):
+    """
+    Extract recipe data from Food Network pages with a specific HTML structure.
+    
+    :param soup: BeautifulSoup object of the page HTML
+    :return: Dictionary containing recipe name, ingredients, and instructions
+    """
+    logger.debug("Starting Food Network recipe extraction.")
+    
     try:
-        response = requests.get(url, headers=headers, timeout=10)
-    except requests.RequestException as e:
-        print(f"DEBUG: Request failed: {e}")
-        return None
-
-    if response.status_code != 200:
-        print(f"DEBUG: Failed to fetch URL. Status code: {response.status_code}")
-        return None
-
-    soup = BeautifulSoup(response.text, 'html.parser')
-
-    isWPRM = soup.select_one('.wprm-recipe-ingredients-container')
-
-    # 1. Check if Smitten Kitchen
-    if "smittenkitchen.com" in url:
-        print("DEBUG: URL is from Smitten Kitchen.")
-        smitten_recipe = extract_smittenkitchen_recipe(soup)
-        if smitten_recipe:
-            print("DEBUG: Successfully extracted Smitten Kitchen recipe.")
-            return smitten_recipe
+        # Extract Recipe Name
+        name_section = soup.select_one('section.o-AssetTitle')
+        if not name_section:
+            logger.warning("Recipe title section not found.")
+            recipe_name = "Untitled Recipe"
         else:
-            print("DEBUG: Failed to extract Smitten Kitchen recipe.")
-
-    # 2. Check if wprm
-    elif (isWPRM):
-        print("DEBUG: URL is from a wprm site")
-        wprm_recipe = extract_wprm_recipe(soup)
-        if wprm_recipe:
-            print("DEBUG: Successfully extracted recipe.")
-            return wprm_recipe
+            name_tag = name_section.select_one('h1.o-AssetTitle__a-Headline > span.o-AssetTitle__a-HeadlineText')
+            recipe_name = name_tag.get_text(strip=True) if name_tag else "Untitled Recipe"
+            if name_tag:
+                logger.debug(f"Extracted recipe name: {recipe_name}")
+            else:
+                logger.debug("Recipe name not found. Using default title.")
+        
+        # Extract Ingredients
+        ingredients = []
+        ingredients_section = soup.select_one('section.o-Ingredients[data-module="recipe-ingredients"]')
+        if not ingredients_section:
+            logger.warning("Ingredients section not found.")
         else:
-            print("DEBUG: Failed to extract recipe.")
-    elif soup.select_one('.tasty-recipes-entry-content'):
-        print("DEBUG: URL is from a Tasty Recipes site.")
-        tasty_recipe = extract_tasty_recipes(soup)
-        if tasty_recipe:
-            print("DEBUG: Successfully extracted Tasty Recipes recipe.")
-            return tasty_recipe
-        else:
-            print("DEBUG: Failed to extract Tasty Recipes recipe.")
-
-
-    # 3. Structured data (JSON-LD)
-    structured_recipe = extract_recipe_from_jsonld(soup)
-    if structured_recipe:
-        print("DEBUG: Found structured data.")
-        name = structured_recipe.get('name', '')
-        ingredients = structured_recipe.get('recipeIngredient', [])
-        instructions_data = structured_recipe.get('recipeInstructions', [])
+            logger.debug("Found ingredients section.")
+            ingredient_elements = ingredients_section.select('p.o-Ingredients__a-Ingredient')
+            logger.debug(f"Found {len(ingredient_elements)} ingredient elements.")
+            
+            for idx, ingredient_p in enumerate(ingredient_elements):
+                # Skip the first ingredient if it's "Deselect All"
+                if idx == 0:
+                    label = ingredient_p.find('span', class_='o-Ingredients__a-Ingredient--CheckboxLabel')
+                    if label and "Deselect All" in label.get_text():
+                        logger.debug("Skipping 'Deselect All' ingredient.")
+                        continue
+                
+                label = ingredient_p.find('span', class_='o-Ingredients__a-Ingredient--CheckboxLabel')
+                ingredient_text = label.get_text(" ", strip=True) if label else ""
+                if ingredient_text:
+                    ingredients.append(ingredient_text)
+                    logger.debug(f"Extracted ingredient: {ingredient_text}")
+        
+        # Extract Instructions
         instructions = []
-        if isinstance(instructions_data, list):
-            for step in instructions_data:
-                if isinstance(step, str):
-                    instructions.append(step)
-                elif isinstance(step, dict) and 'text' in step:
-                    instructions.append(step['text'])
+        instructions_section = soup.select_one('section.o-Method[data-module="recipe-method"]')
+        if not instructions_section:
+            logger.warning("Instructions section not found.")
         else:
-            if isinstance(instructions_data, str):
-                instructions = [instructions_data]
-
-        return {
-            "name": name,
-            "ingredients": ingredients,
-            "instructions": instructions
-        }
-
-    print("DEBUG: No structured data found.")
-    return None
+            logger.debug("Found instructions section.")
+            instruction_steps = instructions_section.select('ol > li.o-Method__m-Step')
+            logger.debug(f"Found {len(instruction_steps)} instruction steps.")
+            
+            for idx, step_li in enumerate(instruction_steps, start=1):
+                step_text = step_li.get_text(" ", strip=True)
+                if step_text:
+                    instructions.append(step_text)
+                    logger.debug(f"Extracted instruction step {idx}: {step_text}")
+        
+        # Return the extracted recipe
+        if ingredients or instructions:
+            logger.debug("Successfully extracted Food Network recipe.")
+            return {
+                "name": recipe_name,
+                "ingredients": ingredients,
+                "instructions": instructions
+            }
+        else:
+            logger.warning("No ingredients or instructions extracted from Food Network recipe.")
+            return None
+    
+    except Exception as e:
+        logger.error(f"Error extracting Food Network recipe: {e}")
+        return None

@@ -93,7 +93,7 @@ function RecipeResult({ recipe, onReset, user }) {
 
   useEffect(() => {
     if (!recipe) {
-      navigate('/home'); // Redirect if no recipe
+      navigate('/'); // Redirect if no recipe
     }
   }, [recipe, navigate]);
 

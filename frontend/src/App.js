@@ -56,7 +56,7 @@ function App() {
       <Routes>
         {/* Main Recipe Extractor */}
         <Route
-          path="/home"
+          path="/"
           element={
             <Hero
               url={url}
@@ -74,7 +74,7 @@ function App() {
             recipe ? (
               <RecipeResult recipe={recipe} user={user} onReset={handleReset} />
             ) : (
-              <Navigate to="/home" replace /> /* Redirect if no recipe */
+              <Navigate to="/" replace /> /* Redirect if no recipe */
             )
           }
         />
@@ -92,7 +92,7 @@ function App() {
         />
 
         {/* Redirect for unknown paths */}
-        <Route path="*" element={<Navigate to="/home" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
   };

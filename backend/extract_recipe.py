@@ -16,11 +16,11 @@ USER_AGENTS = [
     # Add more user agents as needed
 ]
 
-PROXIES = [
-    "http://proxy1.example.com:8080",
-    "http://proxy2.example.com:8080",
-    # Add more proxies as needed
-]
+# PROXIES = [
+#     "http://proxy1.example.com:8080",
+#     "http://proxy2.example.com:8080",
+#     # Add more proxies as needed
+# ]
 
 def extract_recipe(url):
     session = requests.Session()
@@ -43,12 +43,12 @@ def extract_recipe(url):
         "User-Agent": "Mozilla/5.0"
     }
     
-    # Optionally, set a proxy
-    proxy = random.choice(PROXIES)
-    session.proxies.update({
-        "http": proxy,
-        "https": proxy
-    })
+    # # Optionally, set a proxy
+    # proxy = random.choice(PROXIES)
+    # session.proxies.update({
+    #     "http": proxy,
+    #     "https": proxy
+    # })
     
     logger.debug(f"Fetching URL: {url}")
     

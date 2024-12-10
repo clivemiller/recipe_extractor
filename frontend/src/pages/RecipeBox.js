@@ -61,8 +61,9 @@ function RecipeBox({ user }) {
 
   if (!user) {
     return (
-      <div className="no-recipes-text">
-        Please log in to access your recipe box.
+      <div className="recipe-box">
+        <h1>Your Recipe Box</h1>
+        <p>You will need to log in to access your box</p>
       </div>
     );
   }
@@ -71,7 +72,7 @@ function RecipeBox({ user }) {
     <div className="recipe-box">
       <h1>Your Recipe Box</h1>
       {recipes.length === 0 ? (
-        <p>Loading...</p>
+        <p>No recipes found.</p>
       ) : (
         <div className="recipe-list">
           {recipes.map((recipe) => (

@@ -1,7 +1,3 @@
-tasty-recipes:
-    https://pinchofyum.com
-    https://joythebaker.com
-
 custum function: 
     https://www.kingarthurbaking.com
     https://food52.com

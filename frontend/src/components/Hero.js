@@ -39,35 +39,10 @@ function Hero({ url, setUrl, handleFetchRecipe, error }) {
           Send Feedback or Query
         </button>
         <div className="supported-sites">
-          <button onClick={() => setIsOpen(!isOpen)} className="toggle-supported">
-            <span>Websites that return best results {`(Tested sites)`}, Our latest update added a host more of supported sites, too many to fit here!</span>
-          </button>
-          <Collapsible isOpen={isOpen}>
-            <div className="scrollable">
-                <li><a href="https://www.inspiredtaste.net" target="_blank" rel="noopener noreferrer">https://www.inspiredtaste.net</a></li>
-                <li><a href="https://www.epicurious.com" target="_blank" rel="noopener noreferrer">https://www.epicurious.com</a></li>
-                <li><a href="https://www.seriouseats.com" target="_blank" rel="noopener noreferrer">https://www.seriouseats.com</a></li>
-                <li><a href="https://www.allrecipes.com" target="_blank" rel="noopener noreferrer">https://www.allrecipes.com</a></li>
-                <li><a href="https://www.halfbakedharvest.com" target="_blank" rel="noopener noreferrer">https://www.halfbakedharvest.com</a></li>
-                <li><a href="https://smittenkitchen.com" target="_blank" rel="noopener noreferrer">https://smittenkitchen.com</a></li>
-                <li><a href="https://www.simplyrecipes.com" target="_blank" rel="noopener noreferrer">https://www.simplyrecipes.com</a></li>
-                <li><a href="https://www.thepioneerwoman.com" target="_blank" rel="noopener noreferrer">https://www.thepioneerwoman.com</a></li>
-                <li><a href="https://www.marthastewart.com" target="_blank" rel="noopener noreferrer">https://www.marthastewart.com</a></li>
-                <li><a href="https://www.jamieoliver.com" target="_blank" rel="noopener noreferrer">https://www.jamieoliver.com</a></li>
-                <li><a href="https://minimalistbaker.com" target="_blank" rel="noopener noreferrer">https://minimalistbaker.com</a></li>
-                <li><a href="https://www.davidlebovitz.com" target="_blank" rel="noopener noreferrer">https://www.davidlebovitz.com</a></li>
-                <li><a href="https://www.budgetbytes.com" target="_blank" rel="noopener noreferrer">https://www.budgetbytes.com</a></li>
-                <li><a href="https://feelgoodfoodie.net" target="_blank" rel="noopener noreferrer">https://feelgoodfoodie.net</a></li>
-                <li><a href="https://www.servingdumplings.com" target="_blank" rel="noopener noreferrer">https://www.servingdumplings.com</a></li>
-                <li><a href="https://healthyrecipesblogs.com" target="_blank" rel="noopener noreferrer">https://healthyrecipesblogs.com</a></li>
-                <li><a href="https://www.spendwithpennies.com" target="_blank" rel="noopener noreferrer">https://www.spendwithpennies.com</a></li>
-                <li><a href="https://www.onceuponachef.com" target="_blank" rel="noopener noreferrer">https://www.onceuponachef.com</a></li>
-                <li><a href="https://damndelicious.net" target="_blank" rel="noopener noreferrer">https://damndelicious.net</a></li>
-                {/* <li><a href="" target="_blank" rel="noopener noreferrer"></a></li>
-                <li><a href="" target="_blank" rel="noopener noreferrer"></a></li>
-                <li><a href="" target="_blank" rel="noopener noreferrer"></a></li> */}
-            </div>
-          </Collapsible>
+          <div className="toggle-supported">
+            <p>We support a ton of sites, but start here if you don't know where to look!</p>
+            <li><a href="https://www.inspiredtaste.net" target="_blank" rel="noopener noreferrer">https://www.inspiredtaste.net</a></li>
+          </div>
           <button onClick={() => setIsOpen(!isOpen)} className="toggle-supported">
             Sites that have known issues - will be supported soon!
           </button>

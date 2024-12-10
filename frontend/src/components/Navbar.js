@@ -23,8 +23,6 @@ function Navbar({ user, onLogout }) {
           <span className="brand-name">The Recipe Fox</span>
         </NavLink>
       </div>
-
-      {/* Hamburger Menu */}
       <div
         className={`hamburger ${isActive ? 'open' : ''}`}
         onClick={toggleNavbar}

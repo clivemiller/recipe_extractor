@@ -48,7 +48,7 @@ function Hero({ url, setUrl, handleFetchRecipe, error }) {
           </button>
           <Collapsible isOpen={isOpen}>
             <ul>
-              <li>https://pinchofyum.com</li>
+              <li>https://www.foodnetwork.com</li>
               <li>https://www.loveandlemons.com</li>
               <li>https://food52.com</li>
               <li>https://cookieandkate.com</li>

@@ -216,6 +216,77 @@ def login():
         "is_paying_member": user['is_paying_member']
     }), 200
 
+# tabs
+@app.route('/api/users/<int:user_id>/tabs', methods=['GET'])
+def get_tabs(user_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT tab_names FROM users WHERE id = %s', (user_id,))
+    user = cur.fetchone()
+    conn.close()
+
+    if user and user['tab_names']:
+        return jsonify(user['tab_names'])
+    return jsonify([])
+
+@app.route('/api/users/<int:user_id>/tabs', methods=['POST'])
+def add_tab(user_id):
+    data = request.json
+    new_tab = data.get('tab_name')
+
+    if not new_tab:
+        return jsonify({"error": "Tab name is required"}), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute('SELECT tab_names FROM users WHERE id = %s', (user_id,))
+        user = cur.fetchone()
+        tabs = user['tab_names'] if user['tab_names'] else []
+
+        if new_tab in tabs:
+            return jsonify({"error": "Tab already exists"}), 409
+
+        tabs.append(new_tab)
+        cur.execute('UPDATE users SET tab_names = %s WHERE id = %s', (json.dumps(tabs), user_id))
+        conn.commit()
+        return jsonify({"message": "Tab added successfully"}), 201
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": "Failed to add tab"}), 500
+
+    finally:
+        conn.close()
+
+@app.route('/api/users/<int:user_id>/tabs/<string:tab_name>', methods=['DELETE'])
+def delete_tab(user_id, tab_name):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute('SELECT tab_names FROM users WHERE id = %s', (user_id,))
+        user = cur.fetchone()
+        tabs = user['tab_names'] if user['tab_names'] else []
+
+        if tab_name not in tabs:
+            return jsonify({"error": "Tab not found"}), 404
+
+        tabs.remove(tab_name)
+        cur.execute('UPDATE users SET tab_names = %s WHERE id = %s', (json.dumps(tabs), user_id))
+        conn.commit()
+        return jsonify({"message": "Tab deleted successfully"}), 200
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": "Failed to delete tab"}), 500
+
+    finally:
+        conn.close()
+
+
+
 
 # ------------------ Frontend Serving ------------------
 @app.route('/', defaults={'path': ''})

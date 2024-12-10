@@ -6,22 +6,22 @@ function Navbar({ user, onLogout }) {
     <nav className="navbar">
       <ul className="navbar-links">
         <li>
-          <NavLink to="/recipe_extractor" className="nav-link">
+          <NavLink to="/home" className="nav-link">
             Home
           </NavLink>
         </li>
         <li>
-          <NavLink to="/recipe-box" className="nav-link">
+          <NavLink to="/home/recipe-box" className="nav-link">
             Recipe Box
           </NavLink>
         </li>
         {user ? (
-          <NavLink to="/account" className="nav-link">
+          <NavLink to="/home/account" className="nav-link">
           Welcome, {user.username}!
           </NavLink>
         ) : (
           <li>
-            <NavLink to="/account" className="nav-link">
+            <NavLink to="/home/account" className="nav-link">
               Account
             </NavLink>
           </li>

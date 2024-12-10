@@ -33,7 +33,7 @@ function App() {
 
       if (response.ok) {
         setRecipe(data);
-        navigate('/results', { state: { url } });
+        navigate('/home/results', { state: { url } });
       } else {
         setError(data.error || 'Failed to fetch recipe');
       }
@@ -56,7 +56,7 @@ function App() {
       <Routes>
         {/* Main Recipe Extractor */}
         <Route
-          path="/recipe_extractor"
+          path="/home"
           element={
             <Hero
               url={url}
@@ -69,30 +69,30 @@ function App() {
 
         {/* Results Page */}
         <Route
-          path="/results"
+          path="/home/results"
           element={
             recipe ? (
               <RecipeResult recipe={recipe} user={user} onReset={handleReset} />
             ) : (
-              <Navigate to="/recipe_extractor" replace /> /* Redirect if no recipe */
+              <Navigate to="/home" replace /> /* Redirect if no recipe */
             )
           }
         />
 
         {/* Recipe Box */}
         <Route
-          path="/recipe-box"
+          path="/home/recipe-box"
           element={<RecipeBox user={user} />}
         />
 
         {/* Account Page */}
         <Route
-          path="/account"
+          path="/home/account"
           element={<Account user={user} setUser={setUser} />}
         />
 
         {/* Redirect for unknown paths */}
-        <Route path="*" element={<Navigate to="/recipe_extractor" replace />} />
+        <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     );
   };

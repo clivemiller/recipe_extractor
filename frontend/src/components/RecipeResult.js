@@ -51,7 +51,7 @@ function RecipeResult({ recipe, onReset, user }) {
   const handleSave = useCallback(() => {
     if (!user) {
       alert('You must be logged in to save recipes.');
-      navigate('/account');
+      navigate('/home/account');
       return;
     }
   
@@ -93,7 +93,7 @@ function RecipeResult({ recipe, onReset, user }) {
 
   useEffect(() => {
     if (!recipe) {
-      navigate('/recipe_extractor'); // Redirect if no recipe
+      navigate('/home'); // Redirect if no recipe
     }
   }, [recipe, navigate]);
 

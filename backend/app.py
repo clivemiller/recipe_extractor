@@ -109,6 +109,15 @@ def add_saved_recipe(user_id):
     cur = conn.cursor()
 
     try:
+        # Check for duplicates
+        cur.execute('''
+            SELECT * FROM saved_recipes 
+            WHERE user_id = %s AND recipe_name = %s
+        ''', (user_id, data['recipe_name']))
+        existing_recipe = cur.fetchone()
+        if existing_recipe:
+            return jsonify({"error": "Recipe with this name already exists"}), 409
+
         # Insert the recipe into the saved_recipes table
         cur.execute('''
             INSERT INTO saved_recipes (user_id, recipe_name, recipe_data, created_at, updated_at)

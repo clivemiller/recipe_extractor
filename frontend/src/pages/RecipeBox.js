@@ -23,6 +23,30 @@ function RecipeBox({ user }) {
     }
   }, [user]);
 
+  const handleDelete = (recipeId) => {
+    const API_BASE_URL = 'https://recipe-extractor-backend.onrender.com';
+  
+    fetch(`${API_BASE_URL}/api/users/${user.id}/saved-recipes/${recipeId}`, {
+      method: 'DELETE',
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.error) {
+          alert(`Failed to delete recipe: ${data.error}`);
+        } else {
+          setRecipes((prevRecipes) =>
+            prevRecipes.filter((recipe) => recipe.id !== recipeId)
+          );
+          alert('Recipe deleted successfully!');
+        }
+      })
+      .catch((err) => {
+        console.error('Error deleting recipe:', err);
+        alert('Failed to delete recipe. Please try again.');
+      });
+  };
+  
+
   // Handle opening the modal
   const handleOpenModal = (recipe) => {
     setSelectedRecipe(recipe);
@@ -51,12 +75,11 @@ function RecipeBox({ user }) {
       ) : (
         <div className="recipe-list">
           {recipes.map((recipe) => (
-            <div
-              key={recipe.id}
-              className="recipe-card"
-              onClick={() => handleOpenModal(recipe)}
-            >
-              {recipe.recipe_name}
+            <div key={recipe.id} className="recipe-card">
+              <span onClick={() => handleOpenModal(recipe)}>{recipe.recipe_name}</span>
+              <button onClick={() => handleDelete(recipe.id)} className="delete-button">
+                Delete
+              </button>
             </div>
           ))}
         </div>

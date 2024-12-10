@@ -54,9 +54,9 @@ function RecipeResult({ recipe, onReset, user }) {
       navigate('/account');
       return;
     }
-
+  
     const API_BASE_URL = 'https://recipe-extractor-backend.onrender.com';
-
+  
     fetch(`${API_BASE_URL}/api/users/${user.id}/saved-recipes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -71,7 +71,11 @@ function RecipeResult({ recipe, onReset, user }) {
       .then((response) => response.json())
       .then((data) => {
         if (data.error) {
-          alert(`Failed to save recipe: ${data.error}`);
+          if (data.error.includes('already exists')) {
+            alert('This recipe already exists in your Recipe Box.');
+          } else {
+            alert(`Failed to save recipe: ${data.error}`);
+          }
         } else {
           alert('Recipe saved successfully!');
         }
@@ -81,6 +85,7 @@ function RecipeResult({ recipe, onReset, user }) {
         alert('Failed to save recipe. Please try again.');
       });
   }, [decodedRecipe, navigate, user]);
+  
 
   const handlePrint = useCallback(() => {
     window.print();

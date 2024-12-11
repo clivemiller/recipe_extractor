@@ -7,7 +7,6 @@ function RecipeBox({ user }) {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [addToTabModalOpen, setAddToTabModalOpen] = useState(false);
-  const [tabSettings, setTabSettings] = useState(null);
   const [newTabName, setNewTabName] = useState('');
 
   // Adjust API_BASE_URL based on environment
@@ -127,40 +126,6 @@ function RecipeBox({ user }) {
       });
   };
 
-  // Helper function to update multiple recipes' tab_name to 'General'
-  const updateRecipesToGeneral = async (recipesToUpdate) => {
-    const updatePromises = recipesToUpdate.map((recipe) =>
-      fetch(`${API_BASE_URL}/users/${user.id}/saved-recipes/${recipe.id}/tab`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ tab_name: 'General' }),
-      }).then((response) => response.json())
-    );
-
-    try {
-      const results = await Promise.all(updatePromises);
-      const failedUpdates = results.filter((result) => result.error);
-      if (failedUpdates.length > 0) {
-        console.error('Some recipes failed to update:', failedUpdates);
-        alert('Some recipes could not be moved to "General". Please check the console for details.');
-      } else {
-        // Update local state to reflect the changes
-        setRecipes((prevRecipes) =>
-          prevRecipes.map((recipe) =>
-            recipesToUpdate.find((r) => r.id === recipe.id)
-              ? { ...recipe, tab_name: 'General' }
-              : recipe
-          )
-        );
-        alert('All recipes moved to "General" successfully!');
-      }
-    } catch (error) {
-      console.error('Error updating recipes:', error);
-      alert('Failed to update some recipes. Please try again.');
-    }
-  };
   // Updated handleDeleteTab using bulk update
   const handleDeleteTab = async (tab) => {
     if (tab === 'General') {
@@ -292,12 +257,6 @@ function RecipeBox({ user }) {
             </button>
           </div>
           <ul className="tabs-list">
-            <li
-              className={`tab-item ${selectedTab === 'General' ? 'active' : ''}`}
-              onClick={() => handleTabSelect('General')}
-            >
-              General
-            </li>
             {tabs.map((tab, index) => (
               <li
                 key={index}
@@ -318,24 +277,10 @@ function RecipeBox({ user }) {
           ) : (
             <div className="recipe-list">
               {filteredRecipes.map((recipe) => (
-                <div key={recipe.id} className="recipe-card">
-                  <span onClick={() => handleOpenModal(recipe)} className="recipe-name">
+                <div key={recipe.id} className="recipe-card" onClick={() => handleOpenModal(recipe)}>
+                  <span className="recipe-name">
                     {recipe.recipe_name}
                   </span>
-                  <div className="recipe-actions">
-                    <button
-                      onClick={() => handleDeleteRecipe(recipe.id)}
-                      className="delete-button"
-                    >
-                      Delete
-                    </button>
-                    <button
-                      onClick={() => handleOpenAddToTabModal(recipe)}
-                      className="add-to-tab-button"
-                    >
-                      Add to Tab
-                    </button>
-                  </div>
                 </div>
               ))}
             </div>
@@ -367,6 +312,28 @@ function RecipeBox({ user }) {
       {modalOpen && selectedRecipe && (
         <div className="modal">
           <div className="modal-content">
+            <div className="recipe-actions">
+                <button
+                  onClick={() => {
+                    handleDeleteRecipe(selectedRecipe.id)
+                    handleCloseModal()
+                  }
+                }
+                  className="delete-button"
+                >
+                  Delete
+                </button>
+                <button
+                  onClick={() => {
+                    handleCloseModal()
+                    handleOpenAddToTabModal(selectedRecipe)
+                  }
+                }
+                  className="add-to-tab-button"
+                >
+                  Add to Tab
+                </button>
+              </div>
             <span className="close" onClick={handleCloseModal}>
               &times;
             </span>

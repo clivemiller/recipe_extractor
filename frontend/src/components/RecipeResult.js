@@ -66,6 +66,7 @@ function RecipeResult({ recipe, onReset, user }) {
           ingredients: decodedRecipe.ingredients,
           instructions: decodedRecipe.instructions,
         },
+        tab_name: "General"
       }),
     })
       .then((response) => response.json())

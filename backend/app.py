@@ -293,9 +293,9 @@ def signup():
     # Hash the password and save the new user
     hashed_password = generate_password_hash(password)
     cur.execute('''
-        INSERT INTO users (username, email, password, created_at, updated_at)
-        VALUES (%s, %s, %s, NOW(), NOW())
-        RETURNING id, username, email, is_paying_member;
+        INSERT INTO users (username, email, password, created_at, updated_at, tab_names)
+        VALUES (%s, %s, %s, NOW(), NOW(), '["General"]')
+        RETURNING id, username, email, is_paying_member, tab_names;
     ''', (username, email, hashed_password))
     new_user = cur.fetchone()
     conn.commit()

@@ -4,7 +4,7 @@ const API_BASE_URL = 'https://recipe-extractor-backend.onrender.com'; // Backend
 
 function Account({ user, setUser }) {
   const [authMode, setAuthMode] = useState(user ? 'loggedIn' : 'login'); // 'login', 'signup', or 'loggedIn'
-  const [formData, setFormData] = useState({ email: '', password: '', username: '' });
+  const [formData, setFormData] = useState({ email: '', password: '', username: ''});
   const [updateData, setUpdateData] = useState({ username: '', currentPassword: '', newPassword: '' });
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');

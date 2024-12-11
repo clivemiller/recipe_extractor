@@ -5,11 +5,12 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
 from extract_recipe import extract_recipe
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__, static_folder='build', static_url_path='')
 CORS(app)
 
-#change to render internal?
+# Change to render internal?
 DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://clive_miller:rBFsA6V8EUMkAsmer39Or01qZOZQOHf1@dpg-ctbjttdds78s739ccgd0-a.oregon-postgres.render.com/the_recipe_database')
 
 # Function to get database connection
@@ -57,7 +58,7 @@ def update_user(user_id):
         # Validate current password
         cur.execute('SELECT password FROM users WHERE id = %s', (user_id,))
         user = cur.fetchone()
-        if not user or not check_password_hash(user['password'], data['currentPassword']):
+        if not user or not check_password_hash(user['password'], data.get('currentPassword', '')):
             return jsonify({"error": "Invalid current password"}), 401
 
         # Update username or password
@@ -71,7 +72,7 @@ def update_user(user_id):
             SET username = %s, password = %s, updated_at = NOW()
             WHERE id = %s
             RETURNING id, username, email, is_paying_member;
-        ''', (data['username'], hashed_password, user_id))
+        ''', (data.get('username', user['username']), hashed_password, user_id))
         updated_user = cur.fetchone()
         conn.commit()
         return jsonify(updated_user)
@@ -83,7 +84,6 @@ def update_user(user_id):
 
     finally:
         conn.close()
-
 
 # Fetch saved recipes
 @app.route('/api/users/<int:user_id>/saved-recipes', methods=['GET'])
@@ -102,8 +102,29 @@ def add_saved_recipe(user_id):
     data = request.json  # Ensure you're receiving JSON data
 
     # Validate data
-    if not data or 'recipe_name' not in data or 'recipe_data' not in data:
-        return jsonify({"error": "Invalid request data"}), 400
+    if not data or 'recipe_name' not in data or 'recipe_data' not in data or 'tab_name' not in data:
+        return jsonify({"error": "Invalid request data. 'recipe_name', 'recipe_data', and 'tab_name' are required."}), 400
+
+    tab_name = data['tab_name']
+
+    # Validate that the tab_name exists for the user
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute('SELECT tab_names FROM users WHERE id = %s', (user_id,))
+        user = cur.fetchone()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        user_tabs = user['tab_names'] if user['tab_names'] else []
+        if tab_name not in user_tabs:
+            return jsonify({"error": f"Tab '{tab_name}' does not exist for the user."}), 400
+
+    except Exception as e:
+        print(f"Error validating tab name: {e}")
+        return jsonify({"error": "Failed to validate tab name"}), 500
+    finally:
+        conn.close()
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -118,12 +139,12 @@ def add_saved_recipe(user_id):
         if existing_recipe:
             return jsonify({"error": "Recipe with this name already exists"}), 409
 
-        # Insert the recipe into the saved_recipes table
+        # Insert the recipe into the saved_recipes table with tab_name
         cur.execute('''
-            INSERT INTO saved_recipes (user_id, recipe_name, recipe_data, created_at, updated_at)
-            VALUES (%s, %s, %s, NOW(), NOW())
-            RETURNING id, recipe_name, recipe_data;
-        ''', (user_id, data['recipe_name'], json.dumps(data['recipe_data'])))
+            INSERT INTO saved_recipes (user_id, recipe_name, recipe_data, tab_name, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, NOW(), NOW())
+            RETURNING id, recipe_name, recipe_data, tab_name;
+        ''', (user_id, data['recipe_name'], json.dumps(data['recipe_data']), tab_name))
         
         saved_recipe = cur.fetchone()
         conn.commit()
@@ -133,6 +154,102 @@ def add_saved_recipe(user_id):
         conn.rollback()
         print(f"Error saving recipe: {e}")
         return jsonify({"error": "Failed to save recipe"}), 500
+
+    finally:
+        conn.close()
+
+# Bulk update recipes to a specific tab
+@app.route('/api/users/<int:user_id>/saved-recipes/move-to-tab', methods=['PUT'])
+def move_recipes_to_tab(user_id):
+    data = request.json
+
+    if not data or 'source_tab' not in data or 'target_tab' not in data:
+        return jsonify({"error": "Invalid request data. 'source_tab' and 'target_tab' are required."}), 400
+
+    source_tab = data['source_tab']
+    target_tab = data['target_tab']
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        # Validate user exists
+        cur.execute('SELECT tab_names FROM users WHERE id = %s', (user_id,))
+        user = cur.fetchone()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        user_tabs = user['tab_names'] if user['tab_names'] else []
+        if target_tab != 'General' and target_tab not in user_tabs:
+            return jsonify({"error": f"Tab '{target_tab}' does not exist for the user."}), 400
+
+        # Update multiple recipes
+        cur.execute('''
+            UPDATE saved_recipes
+            SET tab_name = %s, updated_at = NOW()
+            WHERE user_id = %s AND tab_name = %s
+            RETURNING id, recipe_name, recipe_data, tab_name;
+        ''', (target_tab, user_id, source_tab))
+
+        updated_recipes = cur.fetchall()
+
+        if not updated_recipes:
+            return jsonify({"message": "No recipes found to update."}), 200
+
+        conn.commit()
+        return jsonify({"updated_recipes": updated_recipes}), 200
+
+    except Exception as e:
+        conn.rollback()
+        print(f"Error moving recipes to tab: {e}")
+        return jsonify({"error": "Failed to move recipes to tab"}), 500
+
+    finally:
+        conn.close()
+
+# Update the tab_name of a saved recipe
+@app.route('/api/users/<int:user_id>/saved-recipes/<int:recipe_id>/tab', methods=['PUT'])
+def update_saved_recipe_tab(user_id, recipe_id):
+    data = request.json
+
+    if not data or 'tab_name' not in data:
+        return jsonify({"error": "Invalid request data. 'tab_name' is required."}), 400
+
+    new_tab_name = data['tab_name']
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        # Validate that the new_tab_name exists for the user
+        cur.execute('SELECT tab_names FROM users WHERE id = %s', (user_id,))
+        user = cur.fetchone()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        user_tabs = user['tab_names'] if user['tab_names'] else []
+        if new_tab_name not in user_tabs:
+            return jsonify({"error": f"Tab '{new_tab_name}' does not exist for the user."}), 400
+
+        # Update the tab_name of the saved recipe
+        cur.execute('''
+            UPDATE saved_recipes
+            SET tab_name = %s, updated_at = NOW()
+            WHERE id = %s AND user_id = %s
+            RETURNING id, recipe_name, recipe_data, tab_name;
+        ''', (new_tab_name, recipe_id, user_id))
+        
+        updated_recipe = cur.fetchone()
+        if not updated_recipe:
+            return jsonify({"error": "Recipe not found"}), 404
+
+        conn.commit()
+        return jsonify(updated_recipe), 200
+
+    except Exception as e:
+        conn.rollback()
+        print(f"Error updating recipe tab: {e}")
+        return jsonify({"error": "Failed to update recipe tab"}), 500
 
     finally:
         conn.close()
@@ -152,8 +269,6 @@ def delete_saved_recipe(user_id, recipe_id):
         return jsonify({"message": "Recipe deleted successfully"})
     else:
         return jsonify({"error": "Recipe not found"}), 404
-    
-from werkzeug.security import generate_password_hash, check_password_hash
 
 @app.route('/api/signup', methods=['POST'])
 def signup():
@@ -216,7 +331,7 @@ def login():
         "is_paying_member": user['is_paying_member']
     }), 200
 
-# tabs
+# Tabs
 @app.route('/api/users/<int:user_id>/tabs', methods=['GET'])
 def get_tabs(user_id):
     conn = get_db_connection()
@@ -284,9 +399,6 @@ def delete_tab(user_id, tab_name):
 
     finally:
         conn.close()
-
-
-
 
 # ------------------ Frontend Serving ------------------
 @app.route('/', defaults={'path': ''})
